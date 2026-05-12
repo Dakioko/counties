@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kenya County Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+<nav id="top-nav">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    County Explorer<span class="light">Kenya</span>
+  </div>
+  <div class="nav-center">
+    <div class="nav-search-trigger" id="nav-search-trigger">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Search all 47 counties…
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="nav-icon-btn" id="btn-about">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      About
+    </button>
+  </div>
+</nav>
+
+<!-- COMMAND PALETTE -->
+<div id="cmd-overlay">
+  <div id="cmd-palette">
+    <div class="cmd-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="cmd-input" placeholder="Search by county, region, governor, or industry…" autocomplete="off">
+      <span class="cmd-esc" id="cmd-esc">Esc</span>
+    </div>
+    <div id="cmd-results"></div>
+  </div>
+</div>
+
+<!-- ABOUT DRAWER -->
+<div id="about-overlay"></div>
+<div id="about-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">About this Explorer</div>
+    <button class="drawer-close" id="drawer-close">Close</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <div class="updated-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Data updated 2025–2026
+      </div>
+      <h3>What is this?</h3>
+      <p>The Kenya County Explorer is an interactive data hub covering all 47 counties established under the 2010 Constitution. It provides at-a-glance statistics, economic profiles, geographic data, and sub-county breakdowns for each county, colour-coded by administrative region.</p>
+    </div>
+    <div class="drawer-section">
+      <h3>Data Sources</h3>
+      <div class="source-list">
+        <div class="source-item">
+          <strong>Kenya National Bureau of Statistics (KNBS)</strong>
+          <span>Population data from Kenya Population and Housing Census (2019), projections to 2025.</span>
+        </div>
+        <div class="source-item">
+          <strong>Council of Governors (CoG)</strong>
+          <span>Governor names reflect post-2022 general election results. Data verified against CoG official records.</span>
+        </div>
+        <div class="source-item">
+          <strong>Commission on Revenue Allocation (CRA)</strong>
+          <span>County area figures, sub-county demarcations, and regional classifications.</span>
+        </div>
+        <div class="source-item">
+          <strong>GCP Estimates</strong>
+          <span>Gross County Product figures are estimates derived from CRA and World Bank Kenya subnational data (2020–2023). They are indicative, not audited.</span>
+        </div>
+        <div class="source-item">
+          <strong>County Governments & CIDP Reports</strong>
+          <span>County Integrated Development Plans (2023–2027) inform industry, landmark, and connectivity data.</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h3>Disclaimer</h3>
+      <div class="disclaimer-box">
+        <p>GCP figures and economic highlights are estimates for informational purposes only. Governor names are current as of mid-2025. Some data may not reflect recent by-elections or administrative changes. Always cross-reference with official county government sources for formal use.</p>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h3>How to Use</h3>
+      <p>Click any county on the map or use to search. Use the <strong>Compare</strong> button to pin up to 3 counties and view them side by side. Download county data as CSV using the button in the sidebar.</p>
+    </div>
+    <div class="drawer-section">
+      <div class="credit-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        GeoJSON map data via mikelmaron/kenya-election-data
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE BAR -->
+<div id="compare-bar">
+  <div class="compare-label">Compare</div>
+  <div class="compare-slots" id="compare-slots"></div>
+  <div class="compare-actions">
+    <button class="compare-go-btn" id="compare-go-btn" disabled>View Comparison</button>
+    <button class="compare-clear-btn" id="compare-clear-btn">Clear</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div id="compare-modal">
+  <div id="compare-modal-inner">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">County Comparison</div>
+        <div class="modal-subtitle"></div>
+      </div>
+      <button class="modal-close" id="compare-modal-close">Close</button>
+    </div>
+    <div id="compare-modal-body"></div>
+  </div>
+</div>
+
+<div id="main">
+  <aside id="sidebar">
+    <div id="placeholder">
+      <div class="ph-circle"><div class="ph-dot"></div></div>
+      <h3>No county selected</h3>
+      <p>Click any county on the map to explore its data, economy, and sub-counties.</p>
+    </div>
+
+    <div id="county-panel">
+      <div class="county-hero">
+        <div class="hero-band" id="c-band"></div>
+        <div class="hero-body">
+          <div class="hero-top">
+            <div class="hero-left">
+              <div class="hero-eyebrow">
+                <div class="hero-eyebrow-dot" id="c-eyebrow-dot"></div>
+                <span id="c-eyebrow-region"></span>
+              </div>
+              <div class="county-name" id="c-name"></div>
+              <div class="county-code-badge" id="c-code-badge"></div>
+            </div>
+            <button class="compare-pin-btn" id="btn-pin-county">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+              Compare
+            </button>
+          </div>
+
+          <div class="key-facts">
+            <div class="kf-cell">
+              <div class="kf-icon" style="background:#edf2fb">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2a5caa" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="kf-text">
+                <div class="kf-label">Population</div>
+                <div class="kf-value" id="c-pop"></div>
+              </div>
+            </div>
+            <div class="kf-cell">
+              <div class="kf-icon" style="background:#f0fdf4">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div class="kf-text">
+                <div class="kf-label">County HQ</div>
+                <div class="kf-value sm" id="c-hq"></div>
+              </div>
+            </div>
+            <div class="kf-cell">
+              <div class="kf-icon" style="background:#fff7ed">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="kf-text">
+                <div class="kf-label">Area km²</div>
+                <div class="kf-value" id="c-area"></div>
+              </div>
+            </div>
+            <div class="kf-cell">
+              <div class="kf-icon" style="background:#fdf4ff">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+              <div class="kf-text">
+                <div class="kf-label">Density /km²</div>
+                <div class="kf-value" id="c-density"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-meta">
+            <div class="governor-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <span class="label">Gov:</span>
+              <strong id="c-governor"></strong>
+            </div>
+            <div class="pop-share-pill" id="c-pct-pill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="economy">Economy</button>
+        <button class="tab-btn" data-tab="geography">Geography</button>
+        <button class="tab-btn" data-tab="subcounties">Sub-Counties</button>
+      </div>
+
+      <div class="tab-contents">
+        <div class="tab-pane active" id="tab-overview">
+          <div><div class="sec-title">About</div><div class="about-card" id="c-about"></div></div>
+          <div><div class="sec-title">Did You Know</div>
+            <div class="fact-box"><div class="fact-label">Fun Fact</div><div class="fact-text" id="c-fact"></div></div>
+          </div>
+          <div><div class="sec-title">Notable Places</div><div class="item-list" id="c-landmarks"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-economy">
+          <div><div class="sec-title">Gross County Product</div>
+            <div class="econ-card">
+              <div class="econ-top">
+                <div class="gcp-amount" id="c-gcp"></div>
+                <div class="gcp-sub">Estimated annual GCP</div>
+                <div class="gcp-tier-tag" id="c-tier"></div>
+              </div>
+              <div class="econ-highlights" id="c-highlights"></div>
+            </div>
+          </div>
+          <div><div class="sec-title">Key Industries</div><div class="chip-row" id="c-industries"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-geography">
+          <div><div class="sec-title">Landscape & Climate</div><div class="geo-2col" id="c-geo"></div></div>
+          <div><div class="sec-title">Transport & Connectivity</div><div class="item-list" id="c-connect"></div></div>
+        </div>
+
+        <div class="tab-pane" id="tab-subcounties">
+          <div><div class="sec-title" id="c-sc-title">Sub-Counties</div><div class="sc-grid" id="c-sc"></div></div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="act-btn secondary" id="btn-share">Share</button>
+        <button class="act-btn primary" id="btn-csv">Download CSV</button>
+      </div>
+    </div>
+  </aside>
+
+  <main id="map-wrap">
+    <svg id="svg-map"></svg>
+    <div id="hover-tip"></div>
+    <div id="legend"></div>
+  </main>
+</div>
+</body>
+<script src="script.js"></script>
+</html>
