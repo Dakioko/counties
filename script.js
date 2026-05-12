@@ -59,10 +59,21 @@ const svg = d3.select("#svg-map");
 const g = svg.append("g");
 const tip = document.getElementById('hover-tip');
 
-const projection = d3.geoMercator().center([37.9, 0.1]).scale(height * 4.5).translate([width/2, height/2]);
+const projection = d3.geoMercator().center([37.9, 0.1]);
 const path = d3.geoPath().projection(projection);
-const zoom = d3.zoom().scaleExtent([1, 8]).on("zoom", e => g.attr("transform", e.transform));
-svg.call(zoom);
+
+function updateMapSize() {
+  width = mapWrap.offsetWidth;
+  height = mapWrap.offsetHeight;
+  projection.translate([width/2, height/2]);
+  const scale = height * (width < 768 ? 3 : width < 1024 ? 3.8 : 4.5);
+  projection.scale(scale);
+}
+
+updateMapSize();
+
+const zoom = d3.zoom().scaleExtent([0.8, 8]).on("zoom", e => g.attr("transform", e.transform));
+svg.call(zoom).on("dblclick.zoom", null);
 
 function getRawName(d) { return d.properties.COUNTY_NAM || d.properties.COUNTY || d.properties.name || ""; }
 function toTitle(s) { return s.toLowerCase().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '); }
@@ -82,10 +93,27 @@ d3.json("https://cdn.jsdelivr.net/gh/mikelmaron/kenya-election-data@master/data/
     .attr("d", path)
     .attr("class", "county-path")
     .attr("fill", d => { const m = findMatch(d); return m ? RC[m.region] : "#cbd5e1"; })
-    .on("mouseover", (e, d) => { tip.textContent = toTitle(getRawName(d)); tip.style.display = 'block'; })
-    .on("mousemove", e => { tip.style.left=(e.offsetX+14)+'px'; tip.style.top=(e.offsetY-10)+'px'; })
+    .on("mouseover", (e, d) => { 
+      const name = toTitle(getRawName(d));
+      tip.textContent = name; 
+      tip.style.display = 'block'; 
+    })
+    .on("mousemove", e => { 
+      tip.style.left=(e.offsetX+14)+'px'; 
+      tip.style.top=(e.offsetY-10)+'px'; 
+    })
     .on("mouseout", () => tip.style.display = 'none')
-    .on("click", function(e, d) { const m = findMatch(d); if(m) showCounty(m, this); });
+    .on("click", function(e, d) { 
+      const m = findMatch(d); 
+      if(m) showCounty(m, this); 
+    });
+});
+
+window.addEventListener('resize', () => {
+  updateMapSize();
+  if (g.selectAll("path").size() > 0) {
+    g.selectAll("path").attr("d", path);
+  }
 });
 
 // ── DENSITY CALC ──
@@ -108,7 +136,6 @@ function showCounty(data, el) {
   void panel.offsetWidth;
   panel.classList.add('active');
 
-  // Hero band + eyebrow
   const regionColor = RC[data.region] || '#8a8680';
   document.getElementById('c-band').style.background = regionColor;
   document.getElementById('c-eyebrow-dot').style.background = regionColor;
@@ -116,23 +143,19 @@ function showCounty(data, el) {
   document.getElementById('c-name').innerHTML = data.name + ' <em>County</em>';
   document.getElementById('c-code-badge').textContent = 'County No. ' + data.code;
 
-  // Key facts
   document.getElementById('c-hq').textContent = data.cap;
   document.getElementById('c-pop').textContent = data.pop;
   document.getElementById('c-area').textContent = data.area;
   document.getElementById('c-density').textContent = calcDensity(data);
   document.getElementById('c-governor').textContent = data.governor || '—';
 
-  // Population share pill
   const pct = ((data.popM / KENYA_POP) * 100).toFixed(2);
   document.getElementById('c-pct-pill').textContent = pct + '% of Kenya';
 
-  // Overview
   document.getElementById('c-about').textContent = data.known;
   document.getElementById('c-fact').textContent = data.funfact || '—';
   document.getElementById('c-landmarks').innerHTML = (data.landmarks||[]).map(l=>`<div class="item-row">${l}</div>`).join('');
 
-  // Economy
   document.getElementById('c-gcp').textContent = data.gcp || '—';
   const tierMap = {high:{cls:'tier-high',txt:'High GCP'},mid:{cls:'tier-mid',txt:'Mid GCP'},low:{cls:'tier-low',txt:'Developing'}};
   const t = tierMap[data.gcpTier] || tierMap.low;
@@ -142,25 +165,25 @@ function showCounty(data, el) {
   document.getElementById('c-highlights').innerHTML = (data.gcpHighlights||[]).map(h=>`<div class="econ-hl">${h}</div>`).join('');
   document.getElementById('c-industries').innerHTML = (data.industries||[]).map(i=>`<div class="chip">${i}</div>`).join('');
 
-  // Geography
   const geo = data.geo || {};
   const geoFields = [{label:'Terrain',val:geo.terrain},{label:'Climate',val:geo.climate},{label:'Elevation',val:geo.elevation},{label:'Borders',val:geo.neighbours}];
   document.getElementById('c-geo').innerHTML = geoFields.filter(f=>f.val).map(f=>`<div class="geo-cell"><div class="geo-label">${f.label}</div><div class="geo-val">${f.val}</div></div>`).join('');
   document.getElementById('c-connect').innerHTML = (data.connectivity||[]).map(c=>`<div class="item-row">${c}</div>`).join('');
 
-  // Sub-counties
   const subs = data.subcounties || [];
   document.getElementById('c-sc-title').textContent = `Sub-Counties (${subs.length})`;
   document.getElementById('c-sc').innerHTML = subs.map(s=>`<div class="sc-chip">${s}</div>`).join('');
 
-  // Reset tabs
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.querySelector('[data-tab="overview"]').classList.add('active');
   document.getElementById('tab-overview').classList.add('active');
 
-  // Update pin button
   updatePinBtn(data.name);
+  
+  if (window.innerWidth < 1024) {
+    document.getElementById('sidebar').scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 // ── TABS ──
@@ -207,8 +230,15 @@ const cmdOverlay = document.getElementById('cmd-overlay');
 const cmdInput = document.getElementById('cmd-input');
 const cmdResults = document.getElementById('cmd-results');
 
-function openCmd() { cmdOverlay.classList.add('open'); cmdInput.focus(); renderCmd(''); }
-function closeCmd() { cmdOverlay.classList.remove('open'); cmdInput.value = ''; }
+function openCmd() { 
+  cmdOverlay.classList.add('open'); 
+  cmdInput.focus(); 
+  renderCmd(''); 
+}
+function closeCmd() { 
+  cmdOverlay.classList.remove('open'); 
+  cmdInput.value = ''; 
+}
 
 document.getElementById('nav-search-trigger').onclick = openCmd;
 document.getElementById('cmd-esc').onclick = closeCmd;
@@ -216,6 +246,10 @@ cmdOverlay.addEventListener('click', e => { if (e.target === cmdOverlay) closeCm
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeCmd();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    openCmd();
+  }
 });
 
 function renderCmd(term) {
@@ -234,7 +268,6 @@ function renderCmd(term) {
     return;
   }
 
-  // Group by region if no search
   if (!q) {
     const grouped = {};
     filtered.forEach(c => { if (!grouped[c.region]) grouped[c.region] = []; grouped[c.region].push(c); });
@@ -273,8 +306,14 @@ cmdInput.addEventListener('input', e => renderCmd(e.target.value));
 const aboutOverlay = document.getElementById('about-overlay');
 const aboutDrawer = document.getElementById('about-drawer');
 
-function openAbout() { aboutOverlay.classList.add('open'); aboutDrawer.classList.add('open'); }
-function closeAbout() { aboutOverlay.classList.remove('open'); aboutDrawer.classList.remove('open'); }
+function openAbout() { 
+  aboutOverlay.classList.add('open'); 
+  aboutDrawer.classList.add('open'); 
+}
+function closeAbout() { 
+  aboutOverlay.classList.remove('open'); 
+  aboutDrawer.classList.remove('open'); 
+}
 
 document.getElementById('btn-about').onclick = openAbout;
 document.getElementById('drawer-close').onclick = closeAbout;
@@ -332,7 +371,6 @@ function renderCompareBar() {
       <button class="compare-slot-remove" data-name="${name}">×</button>
     </div>`;
   });
-  // Empty slots
   for (let i = pinnedCounties.length; i < 3; i++) {
     slotHTML.push(`<div class="compare-slot"><span class="compare-slot-empty">+ Pin a county</span></div>`);
   }
@@ -365,7 +403,6 @@ const compareModal = document.getElementById('compare-modal');
 function openCompareModal() {
   const counties = pinnedCounties.map(name => ({ name, ...countiesData[name] }));
 
-  // Update modal subtitle
   document.querySelector('.modal-subtitle').textContent =
     counties.map(c => c.name).join(' · ');
 
@@ -456,3 +493,71 @@ function openCompareModal() {
 
 document.getElementById('compare-modal-close').onclick = () => compareModal.classList.remove('open');
 compareModal.addEventListener('click', e => { if (e.target === compareModal) compareModal.classList.remove('open'); });
+
+// ── MOBILE RESPONSIVENESS ──
+(function() {
+  const mobileToggle = document.createElement('button');
+  mobileToggle.className = 'mobile-toggle';
+  mobileToggle.innerHTML = '☰';
+  mobileToggle.setAttribute('aria-label', 'Toggle sidebar');
+  
+  const mapWrap = document.getElementById('map-wrap');
+  mapWrap.appendChild(mobileToggle);
+  
+  mobileToggle.addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.style.display === 'none') {
+      sidebar.style.display = 'flex';
+      mobileToggle.innerHTML = '×';
+      mobileToggle.style.background = '#1a1814';
+      mobileToggle.style.color = '#fff';
+    } else {
+      sidebar.style.display = 'none';
+      mobileToggle.innerHTML = '☰';
+      mobileToggle.style.background = '#fff';
+      mobileToggle.style.color = '#1a1814';
+    }
+  });
+  
+  function handleResize() {
+    const isMobile = window.innerWidth < 1024;
+    mobileToggle.style.display = isMobile ? 'block' : 'none';
+    
+    if (!isMobile) {
+      document.getElementById('sidebar').style.display = 'flex';
+      mobileToggle.innerHTML = '☰';
+      mobileToggle.style.background = '#fff';
+      mobileToggle.style.color = '#1a1814';
+    }
+  }
+  
+  window.addEventListener('resize', handleResize);
+  handleResize();
+  
+  let touchStartY = 0;
+  const sidebar = document.getElementById('sidebar');
+  
+  sidebar.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  
+  sidebar.addEventListener('touchmove', (e) => {
+    if (window.innerWidth >= 1024) return;
+    const deltaY = e.touches[0].clientY - touchStartY;
+    if (deltaY > 50) {
+      sidebar.style.maxHeight = '70vh';
+      document.getElementById('map-wrap').style.height = '30vh';
+    } else if (deltaY < -50) {
+      sidebar.style.maxHeight = '30vh';
+      document.getElementById('map-wrap').style.height = '70vh';
+    }
+  }, { passive: true });
+  
+  sidebar.addEventListener('touchend', () => {
+    if (window.innerWidth >= 1024) return;
+    setTimeout(() => {
+      sidebar.style.maxHeight = '';
+      document.getElementById('map-wrap').style.height = '';
+    }, 300);
+  });
+})();
