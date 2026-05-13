@@ -2,47 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kenya County Explorer</title>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 </head>
 <body>
+
 <nav id="top-nav">
   <div class="brand">
     <div class="brand-dot"></div>
     County Explorer<span class="light">Kenya</span>
   </div>
   <div class="nav-center">
-    <div class="nav-search-trigger" id="nav-search-trigger">
+    <div class="nav-search-trigger" id="nav-search-trigger" role="button" tabindex="0" aria-label="Search counties">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Search all 47 counties…
     </div>
   </div>
   <div class="nav-right">
-    <button class="nav-icon-btn" id="btn-about">
+    <button class="nav-icon-btn" id="btn-about" aria-label="About this explorer">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      About
+      <span class="btn-label">About</span>
+    </button>
+    <!-- Mobile search icon shown when nav-center is hidden -->
+    <button class="nav-icon-btn mob-search-btn" id="mob-search-btn" aria-label="Search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     </button>
   </div>
 </nav>
 
 <!-- COMMAND PALETTE -->
-<div id="cmd-overlay">
+<div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Search counties">
   <div id="cmd-palette">
     <div class="cmd-header">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="cmd-input" placeholder="Search by county, region, governor, or industry…" autocomplete="off">
+      <input type="text" id="cmd-input" placeholder="Search by county, region, governor, or industry…" autocomplete="off" aria-label="Search input">
       <span class="cmd-esc" id="cmd-esc">Esc</span>
     </div>
-    <div id="cmd-results"></div>
+    <div id="cmd-results" role="listbox"></div>
   </div>
 </div>
 
 <!-- ABOUT DRAWER -->
 <div id="about-overlay"></div>
-<div id="about-drawer">
+<div id="about-drawer" role="dialog" aria-label="About this explorer">
   <div class="drawer-header">
     <div class="drawer-title">About this Explorer</div>
     <button class="drawer-close" id="drawer-close">Close</button>
@@ -89,7 +94,7 @@
     </div>
     <div class="drawer-section">
       <h3>How to Use</h3>
-      <p>Click any county on the map or use to search. Use the <strong>Compare</strong> button to pin up to 3 counties and view them side by side. Download county data as CSV using the button in the sidebar.</p>
+      <p>Click or tap any county on the map to explore its data, economy, and sub-counties. Use the <strong>Compare</strong> button to pin up to 3 counties and view them side by side. On mobile, tap the map then use the panel that slides up from the bottom. Download county data as CSV from the sidebar.</p>
     </div>
     <div class="drawer-section">
       <div class="credit-row">
@@ -101,7 +106,7 @@
 </div>
 
 <!-- COMPARE BAR -->
-<div id="compare-bar">
+<div id="compare-bar" role="region" aria-label="Compare counties">
   <div class="compare-label">Compare</div>
   <div class="compare-slots" id="compare-slots"></div>
   <div class="compare-actions">
@@ -111,7 +116,7 @@
 </div>
 
 <!-- COMPARE MODAL -->
-<div id="compare-modal">
+<div id="compare-modal" role="dialog" aria-modal="true" aria-label="County comparison">
   <div id="compare-modal-inner">
     <div class="modal-header">
       <div>
@@ -125,11 +130,40 @@
 </div>
 
 <div id="main">
-  <aside id="sidebar">
+  <!-- MAP (default view on mobile) -->
+  <main id="map-wrap" aria-label="Kenya county map">
+    <svg id="svg-map" aria-hidden="true"></svg>
+    <div id="hover-tip" role="tooltip"></div>
+
+    <!-- Map hint for first-time users -->
+    <div id="map-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Tap any county to explore
+    </div>
+
+    <!-- Reset zoom button -->
+    <button id="btn-reset-zoom" aria-label="Reset map zoom" title="Reset zoom">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+
+    <!-- Mobile panel toggle -->
+    <button id="mob-panel-btn" aria-label="View county details" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+      <span id="mob-panel-btn-label">Details</span>
+    </button>
+  </main>
+
+  <!-- SIDEBAR / BOTTOM SHEET -->
+  <aside id="sidebar" aria-label="County information panel">
+    <!-- Mobile drag handle -->
+    <div class="sheet-handle" id="sheet-handle" aria-hidden="true">
+      <div class="sheet-handle-bar"></div>
+    </div>
+
     <div id="placeholder">
       <div class="ph-circle"><div class="ph-dot"></div></div>
       <h3>No county selected</h3>
-      <p>Click any county on the map to explore its data, economy, and sub-counties.</p>
+      <p>Tap any county on the map to explore its data, economy, and sub-counties.</p>
     </div>
 
     <div id="county-panel">
@@ -142,6 +176,7 @@
                 <div class="hero-eyebrow-dot" id="c-eyebrow-dot"></div>
                 <span id="c-eyebrow-region"></span>
               </div>
+              <!-- "County" word removed — name stands alone -->
               <div class="county-name" id="c-name"></div>
               <div class="county-code-badge" id="c-code-badge"></div>
             </div>
@@ -193,7 +228,6 @@
           <div class="hero-meta">
             <div class="governor-row">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-              <span class="label">Gov:</span>
               <strong id="c-governor"></strong>
             </div>
             <div class="pop-share-pill" id="c-pct-pill"></div>
@@ -201,24 +235,26 @@
         </div>
       </div>
 
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="overview">Overview</button>
-        <button class="tab-btn" data-tab="economy">Economy</button>
-        <button class="tab-btn" data-tab="geography">Geography</button>
-        <button class="tab-btn" data-tab="subcounties">Sub-Counties</button>
+      <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+        <button class="tab-btn" data-tab="economy" role="tab" aria-selected="false">Economy</button>
+        <button class="tab-btn" data-tab="geography" role="tab" aria-selected="false">Geography</button>
+        <button class="tab-btn" data-tab="subcounties" role="tab" aria-selected="false">Sub-Counties</button>
       </div>
 
       <div class="tab-contents">
-        <div class="tab-pane active" id="tab-overview">
+        <div class="tab-pane active" id="tab-overview" role="tabpanel">
           <div><div class="sec-title">About</div><div class="about-card" id="c-about"></div></div>
-          <div><div class="sec-title">Did You Know</div>
+          <div>
+            <div class="sec-title">Did You Know</div>
             <div class="fact-box"><div class="fact-label">Fun Fact</div><div class="fact-text" id="c-fact"></div></div>
           </div>
           <div><div class="sec-title">Notable Places</div><div class="item-list" id="c-landmarks"></div></div>
         </div>
 
-        <div class="tab-pane" id="tab-economy">
-          <div><div class="sec-title">Gross County Product</div>
+        <div class="tab-pane" id="tab-economy" role="tabpanel">
+          <div>
+            <div class="sec-title">Gross County Product</div>
             <div class="econ-card">
               <div class="econ-top">
                 <div class="gcp-amount" id="c-gcp"></div>
@@ -231,29 +267,30 @@
           <div><div class="sec-title">Key Industries</div><div class="chip-row" id="c-industries"></div></div>
         </div>
 
-        <div class="tab-pane" id="tab-geography">
+        <div class="tab-pane" id="tab-geography" role="tabpanel">
           <div><div class="sec-title">Landscape & Climate</div><div class="geo-2col" id="c-geo"></div></div>
           <div><div class="sec-title">Transport & Connectivity</div><div class="item-list" id="c-connect"></div></div>
         </div>
 
-        <div class="tab-pane" id="tab-subcounties">
+        <div class="tab-pane" id="tab-subcounties" role="tabpanel">
           <div><div class="sec-title" id="c-sc-title">Sub-Counties</div><div class="sc-grid" id="c-sc"></div></div>
         </div>
       </div>
 
       <div class="action-bar">
-        <button class="act-btn secondary" id="btn-share">Share</button>
-        <button class="act-btn primary" id="btn-csv">Download CSV</button>
+        <button class="act-btn secondary" id="btn-share">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+        <button class="act-btn primary" id="btn-csv">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
       </div>
     </div>
   </aside>
-
-  <main id="map-wrap">
-    <svg id="svg-map"></svg>
-    <div id="hover-tip"></div>
-    <div id="legend"></div>
-  </main>
 </div>
-</body>
+
 <script src="script.js"></script>
+</body>
 </html>
