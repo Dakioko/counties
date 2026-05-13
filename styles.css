@@ -14,7 +14,7 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
   /* Bottom sheet heights for mobile */
-  --sheet-peek: 80px;
+  --sheet-peek: 200px;
   --sheet-mid: 52vh;
   --sheet-full: 92vh;
 }
@@ -48,7 +48,7 @@ body {
   align-items: center;
   gap: 10px;
   font-family: 'Outfit', sans-serif;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   color: #1a1814;
   letter-spacing: -0.3px;
@@ -130,7 +130,7 @@ body {
 #cmd-palette {
   background: #fff;
   border-radius: 16px;
-  width: 400px;
+  width: 440px;
   max-width: 95vw;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05);
   overflow: hidden;
@@ -1102,8 +1102,7 @@ body {
   }
   .sheet-handle:active { cursor: grabbing; }
 
-  /* Placeholder hidden when peeking — no county selected yet */
-  #sidebar.sheet-peek #placeholder { display: none; }
+  /* Show placeholder in peek state — gives user context */
   #sidebar.sheet-peek #county-panel { display: none; }
 
   /* Floating panel button on map */

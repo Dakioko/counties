@@ -160,6 +160,11 @@ function isMobile() { return window.innerWidth <= 768; }
 // Sheet state: 'hidden' | 'peek' | 'mid' | 'open'
 let sheetState = 'hidden';
 
+// On mobile, start at mid so placeholder is visible on load
+if (isMobile()) {
+  setSheet('mid');
+}
+
 function setSheet(state) {
   sheetState = state;
   sidebar.classList.remove('sheet-peek', 'sheet-mid', 'sheet-open');
@@ -550,10 +555,11 @@ function openCompareModal() {
 document.getElementById('compare-modal-close').onclick = () => compareModal.classList.remove('open');
 compareModal.addEventListener('click', e => { if (e.target === compareModal) compareModal.classList.remove('open'); });
 
+// ── BRAND CLICK — reset to home state ──
 document.querySelector('.brand').addEventListener('click', () => {
   selectedCounty = null;
   d3.selectAll('.county-path').classed('selected', false);
   document.getElementById('county-panel').classList.remove('active');
   document.getElementById('placeholder').style.display = '';
-  if (isMobile()) setSheet('hidden');
+  if (isMobile()) setSheet('mid');
 });
