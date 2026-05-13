@@ -184,8 +184,7 @@ function showCounty(data, el) {
 
   const regionColor = RC[data.region] || '#2563eb';
   document.getElementById('c-band').style.background = regionColor;
-  document.getElementById('c-eyebrow-dot').style.background = regionColor;
-  document.getElementById('c-eyebrow-region').textContent = data.region + ' Region';
+  // region eyebrow removed — counties are standalone
 
   // County name — no "County" word
   document.getElementById('c-name').textContent = data.name;

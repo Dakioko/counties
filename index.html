@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kenya County Explorer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23006600'/><rect y='11' width='32' height='10' fill='%23ffffff'/><rect y='13' width='32' height='6' fill='%23cc0000'/><polygon points='0,0 14,16 0,32' fill='%23000000'/></svg>">
   <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 </head>
 <body>
@@ -162,8 +163,13 @@
 
     <div id="placeholder">
       <div class="ph-circle"><div class="ph-dot"></div></div>
-      <h3>No county selected</h3>
-      <p>Tap any county on the map to explore its data, economy, and sub-counties.</p>
+      <h3>Explore Kenya</h3>
+      <p>Click any county on the map to explore its data, economy, and sub-counties.</p>
+      <div class="ph-stats">
+        <div class="ph-stat"><div class="ph-stat-val">47</div><div class="ph-stat-label">Counties</div></div>
+        <div class="ph-stat"><div class="ph-stat-val">55M</div><div class="ph-stat-label">Population</div></div>
+        <div class="ph-stat"><div class="ph-stat-val">8</div><div class="ph-stat-label">Regions</div></div>
+      </div>
     </div>
 
     <div id="county-panel">
@@ -172,11 +178,7 @@
         <div class="hero-body">
           <div class="hero-top">
             <div class="hero-left">
-              <div class="hero-eyebrow">
-                <div class="hero-eyebrow-dot" id="c-eyebrow-dot"></div>
-                <span id="c-eyebrow-region"></span>
-              </div>
-              <!-- "County" word removed — name stands alone -->
+              <!-- County name — standalone, no region label -->
               <div class="county-name" id="c-name"></div>
               <div class="county-code-badge" id="c-code-badge"></div>
             </div>
@@ -194,6 +196,7 @@
               <div class="kf-text">
                 <div class="kf-label">Population</div>
                 <div class="kf-value" id="c-pop"></div>
+                <div class="kf-pct" id="c-pct-pill"></div>
               </div>
             </div>
             <div class="kf-cell">
@@ -228,9 +231,8 @@
           <div class="hero-meta">
             <div class="governor-row">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-              <strong id="c-governor"></strong>
+              <span class="gov-label">Gov.</span><strong id="c-governor"></strong>
             </div>
-            <div class="pop-share-pill" id="c-pct-pill"></div>
           </div>
         </div>
       </div>
