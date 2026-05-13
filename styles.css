@@ -47,7 +47,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: #1a1814;
@@ -225,7 +225,7 @@ body {
   top: 0;
   z-index: 2;
 }
-.drawer-title { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); }
+.drawer-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
 .drawer-close {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -609,12 +609,12 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 32px;
+  padding: 20px 32px;
   text-align: center;
-  gap: 10px;
+  gap: 50px;
 }
 .ph-circle {
-  width: 64px; height: 64px;
+  width: 74px; height: 74px;
   border-radius: 50%;
   background: var(--bg);
   border: 2px solid var(--border);
