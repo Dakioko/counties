@@ -204,6 +204,15 @@ function showCounty(data, el) {
   document.getElementById('c-landmarks').innerHTML = (data.landmarks || []).map(l => `<div class="item-row">${l}</div>`).join('');
 
   document.getElementById('c-gcp').textContent = data.gcp || '—';
+  // GCP relative bar — compare to Nairobi (highest at 2100B)
+  const gcpNum = parseFloat((data.gcp || '0').replace(/[^0-9.]/g, ''));
+  const gcpMax = 2100;
+  const gcpPct = Math.min(100, Math.round((gcpNum / gcpMax) * 100));
+  const gcpBarEl = document.getElementById('c-gcp-bar');
+  if (gcpBarEl) {
+    gcpBarEl.style.width = gcpPct + '%';
+    gcpBarEl.style.background = data.gcpTier === 'high' ? '#16a34a' : data.gcpTier === 'mid' ? '#ca8a04' : '#94a3b8';
+  }
   const tierMap = { high: { cls: 'tier-high', txt: 'High GCP' }, mid: { cls: 'tier-mid', txt: 'Mid GCP' }, low: { cls: 'tier-low', txt: 'Developing' } };
   const t = tierMap[data.gcpTier] || tierMap.low;
   const tierEl = document.getElementById('c-tier');
@@ -219,7 +228,7 @@ function showCounty(data, el) {
 
   const subs = data.subcounties || [];
   document.getElementById('c-sc-title').textContent = `Sub-Counties (${subs.length})`;
-  document.getElementById('c-sc').innerHTML = subs.map(s => `<div class="sc-chip">${s}</div>`).join('');
+  document.getElementById('c-sc').innerHTML = subs.map(s => `<div class="sc-chip" style="border-left-color:${regionColor}">${s}</div>`).join('');
 
   // Reset tabs to overview
   document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
@@ -352,11 +361,7 @@ function renderCmd(term) {
   const q = term.toLowerCase().replace(/[^a-z0-9 ]/g, '');
   const allCounties = Object.entries(countiesData).map(([name, d]) => ({ name, ...d }));
   const filtered = !q ? allCounties : allCounties.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    c.region.toLowerCase().includes(q) ||
-    (c.governor || '').toLowerCase().includes(q) ||
-    (c.industries || []).some(i => i.toLowerCase().includes(q)) ||
-    (c.cap || '').toLowerCase().includes(q)
+    c.name.toLowerCase().includes(q)
   );
 
   if (!filtered.length) {
@@ -364,16 +369,11 @@ function renderCmd(term) {
     return;
   }
 
-  if (!q) {
-    const grouped = {};
-    filtered.forEach(c => { if (!grouped[c.region]) grouped[c.region] = []; grouped[c.region].push(c); });
-    cmdResults.innerHTML = Object.entries(grouped).map(([region, counties]) =>
-      `<div class="cmd-section-label">${region}</div>` + counties.map(c => cmdItem(c)).join('')
-    ).join('');
-  } else {
-    cmdResults.innerHTML = `<div class="cmd-section-label">${filtered.length} result${filtered.length !== 1 ? 's' : ''}</div>` +
-      filtered.map(c => cmdItem(c)).join('');
-  }
+  const label = q
+    ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`
+    : 'All 47 Counties';
+  cmdResults.innerHTML = `<div class="cmd-section-label">${label}</div>` +
+    filtered.map(c => cmdItem(c)).join('');
 
   cmdResults.querySelectorAll('.cmd-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -391,7 +391,6 @@ function cmdItem(c) {
   return `<div class="cmd-item" data-county="${c.name}" role="option">
     <div class="cmd-dot" style="background:${RC[c.region]}"></div>
     <div class="cmd-main">${c.name}</div>
-    <div class="cmd-sub">${c.region} · ${c.cap}</div>
   </div>`;
 }
 
@@ -500,7 +499,6 @@ function openCompareModal() {
       <div class="cmp-card-header">
         <div class="cmp-card-band" style="background:${color}"></div>
         <div class="cmp-card-title-row">
-          <div class="cmp-card-region" style="color:${color}">${c.region}</div>
           <div class="cmp-card-name">${c.name}</div>
           <div class="cmp-card-hq">HQ: ${c.cap} &nbsp;·&nbsp; No. ${c.code}</div>
         </div>

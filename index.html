@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kenya County Explorer</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23006600'/><rect y='11' width='32' height='10' fill='%23ffffff'/><rect y='13' width='32' height='6' fill='%23cc0000'/><polygon points='0,0 14,16 0,32' fill='%23000000'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23006600'/><rect width='32' height='32' rx='7' fill='url(%23g)'/><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%23000000'/><stop offset='38%25' stop-color='%23000000'/><stop offset='38%25' stop-color='%23bb0000'/><stop offset='62%25' stop-color='%23bb0000'/><stop offset='62%25' stop-color='%23006600'/><stop offset='100%25' stop-color='%23006600'/></linearGradient></defs><text x='16' y='22' font-family='Arial Black,sans-serif' font-size='14' font-weight='900' fill='white' text-anchor='middle' letter-spacing='0.5'>KE</text></svg>">
   <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 </head>
 <body>
@@ -39,7 +39,7 @@
   <div id="cmd-palette">
     <div class="cmd-header">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="cmd-input" placeholder="Search by county, region, governor, or industry…" autocomplete="off" aria-label="Search input">
+      <input type="text" id="cmd-input" placeholder="Search counties…" autocomplete="off" aria-label="Search input">
       <span class="cmd-esc" id="cmd-esc">Esc</span>
     </div>
     <div id="cmd-results" role="listbox"></div>
@@ -168,7 +168,6 @@
       <div class="ph-stats">
         <div class="ph-stat"><div class="ph-stat-val">47</div><div class="ph-stat-label">Counties</div></div>
         <div class="ph-stat"><div class="ph-stat-val">55M</div><div class="ph-stat-label">Population</div></div>
-        <div class="ph-stat"><div class="ph-stat-val">8</div><div class="ph-stat-label">Regions</div></div>
       </div>
     </div>
 
@@ -178,9 +177,11 @@
         <div class="hero-body">
           <div class="hero-top">
             <div class="hero-left">
-              <!-- County name — standalone, no region label -->
-              <div class="county-name" id="c-name"></div>
-              <div class="county-code-badge" id="c-code-badge"></div>
+              <!-- County name — inline with number -->
+              <div class="county-name-row">
+                <div class="county-name" id="c-name"></div>
+                <div class="county-code-badge" id="c-code-badge"></div>
+              </div>
             </div>
             <button class="compare-pin-btn" id="btn-pin-county">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
@@ -260,7 +261,8 @@
             <div class="econ-card">
               <div class="econ-top">
                 <div class="gcp-amount" id="c-gcp"></div>
-                <div class="gcp-sub">Estimated annual GCP</div>
+                <div class="gcp-sub">Estimated annual GCP — relative to Nairobi</div>
+              <div class="gcp-bar-track"><div class="gcp-bar-fill" id="c-gcp-bar"></div></div>
                 <div class="gcp-tier-tag" id="c-tier"></div>
               </div>
               <div class="econ-highlights" id="c-highlights"></div>
