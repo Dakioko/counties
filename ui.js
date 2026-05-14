@@ -83,7 +83,130 @@ const els = {
   mobSearchBtn:      document.getElementById('mob-search-btn'),
   brand:             document.querySelector('.brand'),
 };
+// ── ONBOARDING ───────────────────────────────────────────────────────────────
+const ONBOARDING_STORAGE_KEY = 'kenya_county_onboarding_seen';
+let currentStep = 0;
+let totalSteps = 3;
 
+function initOnboarding() {
+  // Check if user has seen onboarding before
+  const hasSeenOnboarding = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+  
+  if (!hasSeenOnboarding) {
+    // Small delay to ensure page is fully rendered
+    setTimeout(() => {
+      openOnboarding();
+    }, 500);
+  }
+}
+
+function openOnboarding() {
+  const modal = document.getElementById('onboarding-modal');
+  if (!modal) return;
+  
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  currentStep = 0;
+  showStep(0);
+  createOnboardingDots();
+  
+  // Add focus trap
+  createFocusTrap(modal);
+}
+
+function closeOnboarding() {
+  const modal = document.getElementById('onboarding-modal');
+  if (!modal) return;
+  
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+}
+
+function showStep(step) {
+  const steps = document.querySelectorAll('.onboarding-step');
+  const dots = document.querySelectorAll('.onboarding-dot');
+  
+  steps.forEach((s, i) => {
+    s.classList.toggle('active', i === step);
+  });
+  
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('active', i === step);
+  });
+  
+  currentStep = step;
+}
+
+function createOnboardingDots() {
+  const dotsContainer = document.getElementById('onboarding-dots');
+  if (!dotsContainer) return;
+  
+  dotsContainer.innerHTML = '';
+  for (let i = 0; i < totalSteps; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'onboarding-dot' + (i === currentStep ? ' active' : '');
+    dot.addEventListener('click', () => {
+      showStep(i);
+    });
+    dotsContainer.appendChild(dot);
+  }
+}
+
+function nextStep() {
+  if (currentStep < totalSteps - 1) {
+    showStep(currentStep + 1);
+  } else {
+    closeOnboarding();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    showStep(currentStep - 1);
+  }
+}
+
+// Bind onboarding events after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a moment for all elements to be ready
+  setTimeout(() => {
+    const closeBtn = document.getElementById('onboarding-close');
+    const doneBtn = document.getElementById('onboarding-done');
+    const nextBtns = document.querySelectorAll('[data-next]');
+    const prevBtns = document.querySelectorAll('[data-prev]');
+    
+    if (closeBtn) closeBtn.addEventListener('click', closeOnboarding);
+    if (doneBtn) doneBtn.addEventListener('click', closeOnboarding);
+    
+    nextBtns.forEach(btn => {
+      btn.addEventListener('click', nextStep);
+    });
+    
+    prevBtns.forEach(btn => {
+      btn.addEventListener('click', prevStep);
+    });
+    
+    // Close when clicking outside (on the overlay)
+    const modal = document.getElementById('onboarding-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeOnboarding();
+      });
+    }
+  }, 100);
+});
+
+// Call this when the app initializes
+// Add this line to your existing initialization (around where you call initMap)
+// For now, we'll call it from showCounty to ensure it's after render, but better to call once
+let onboardingInitialized = false;
+function tryInitOnboarding() {
+  if (!onboardingInitialized && document.getElementById('onboarding-modal')) {
+    onboardingInitialized = true;
+    initOnboarding();
+  }
+}
 // ── HELPERS ─────────────────────────────────────────────────────────────────
 function isMobile() { return window.innerWidth <= 768; }
 
@@ -899,3 +1022,11 @@ function resetHome() {
 
 els.brand.addEventListener('click', resetHome);
 els.brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') resetHome(); });
+
+// At the very end of ui.js, add:
+// Initialize onboarding when the page is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', tryInitOnboarding);
+} else {
+  tryInitOnboarding();
+}

@@ -386,7 +386,65 @@
     </div>
   </aside>
 </div>
+<!-- ONBOARDING MODAL -->
+<div id="onboarding-modal" class="onboarding-modal" role="dialog" aria-modal="true" aria-label="Welcome to Kenya County Explorer" aria-hidden="true">
+  <div class="onboarding-content">
+    <button class="onboarding-close" id="onboarding-close" aria-label="Close onboarding">Skip</button>
+    <div class="onboarding-steps">
+      <div class="onboarding-step active" data-step="0">
+        <div class="onboarding-icon">🗺️</div>
+        <h2>Explore Kenya's 47 Counties</h2>
+        <p>Welcome to the Kenya County Explorer — your interactive guide to every county's population, economy, geography, and culture.</p>
+        <div class="onboarding-demo-map">
+          <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="20" width="140" height="80" rx="6" fill="linear-gradient(150deg, #e8e4dc, #ddd9d0)" stroke="#bbb7b0" stroke-width="1"/>
+            <path d="M60 45 L80 35 L100 42 L90 60 L70 58 L60 45Z" fill="#4f46e5" stroke="white" stroke-width="1.5" opacity="0.9"/>
+            <path d="M110 40 L130 35 L140 50 L125 60 L110 50 L110 40Z" fill="#059669" stroke="white" stroke-width="1.5" opacity="0.9"/>
+            <path d="M70 70 L90 65 L100 80 L80 85 L70 70Z" fill="#ea580c" stroke="white" stroke-width="1.5" opacity="0.9"/>
+            <text x="100" y="105" text-anchor="middle" font-size="9" fill="#6b6965">Click any coloured area →</text>
+          </svg>
+        </div>
+        <button class="onboarding-next" data-next="0">Next →</button>
+      </div>
 
+      <div class="onboarding-step" data-step="1">
+        <div class="onboarding-icon">🔍</div>
+        <h2>Search Any County</h2>
+        <p>Use the search bar at the top to quickly find any of Kenya's 47 counties by name, region, industry, or governor.</p>
+        <div class="onboarding-demo-search">
+          <div class="demo-search-bar">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>Search counties…</span>
+          </div>
+        </div>
+        <p class="onboarding-hint">Pro tip: Press <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> to search from anywhere</p>
+        <button class="onboarding-next" data-next="1">Next →</button>
+      </div>
+
+      <div class="onboarding-step" data-step="2">
+        <div class="onboarding-icon">⭐</div>
+        <h2>Compare Counties</h2>
+        <p>Pin up to 3 counties with the <strong>Compare</strong> button to see population, economy, and key facts side by side.</p>
+        <div class="onboarding-demo-compare">
+          <div class="demo-compare-bar">
+            <span class="demo-star">⭐</span>
+            <span>Mombasa</span>
+            <span class="demo-star">⭐</span>
+            <span>Nairobi</span>
+            <span class="demo-star">⭐</span>
+            <span>Kisumu</span>
+          </div>
+          <button class="demo-compare-btn" disabled>View Comparison</button>
+        </div>
+        <div class="onboarding-nav">
+          <button class="onboarding-prev" data-prev="2">← Back</button>
+          <button class="onboarding-done" id="onboarding-done">Start Exploring →</button>
+        </div>
+      </div>
+    </div>
+    <div class="onboarding-dots" id="onboarding-dots"></div>
+  </div>
+</div>
 <!-- Modules loaded as ES modules. County data is separated into counties.js -->
 <!-- Single entry point — wires map.js and ui.js without circular imports -->
 <script type="module" src="main.js"></script>
