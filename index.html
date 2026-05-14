@@ -1,62 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-KE">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Explore Kenya</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explore all 47 counties of Kenya — population, economy, geography, landmarks, and more. Interactive map with county comparisons.">
+
+  <!-- Open Graph / sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Karibu Kenya — County Explorer">
+  <meta property="og:description" content="Explore all 47 counties of Kenya — population, economy, geography, sub-counties, and more.">
+  <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Flag_of_Kenya.svg/1200px-Flag_of_Kenya.svg.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Content-Security-Policy: restrict resources to known trusted origins 
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdnjs.cloudflare.com;
+    style-src  'self' https://fonts.googleapis.com 'unsafe-inline';
+    font-src   https://fonts.gstatic.com;
+    img-src    'self' data:;
+    connect-src 'self' https://cdn.jsdelivr.net;
+  ">-->
+
+  <title>Karibu Kenya | County Explorer</title>
+
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23006600'/><text x='16' y='23' font-family='Arial Black,sans-serif' font-size='15' font-weight='900' fill='white' text-anchor='middle' letter-spacing='-0.5'>KE</text></svg>">
+
   <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
 </head>
 <body>
 
-<nav id="top-nav">
-  <div class="brand">
-    <div class="brand-dot"></div>
+<nav id="top-nav" aria-label="Main navigation">
+  <!-- Clicking the brand resets to home state (handled in ui.js) -->
+  <div class="brand" role="button" tabindex="0" aria-label="Reset to home view">
+    <div class="brand-dot" aria-hidden="true"></div>
     Karibu Kenya
   </div>
   <div class="nav-center">
-    <div class="nav-search-trigger" id="nav-search-trigger" role="button" tabindex="0" aria-label="Search counties">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <div class="nav-search-trigger" id="nav-search-trigger"
+         role="button" tabindex="0" aria-label="Search counties (Ctrl+K)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Explore any of Kenya's 47 counties…
     </div>
   </div>
   <div class="nav-right">
-    <button class="nav-icon-btn" id="btn-about" aria-label="About this explorer">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <button class="nav-icon-btn" id="btn-about" aria-label="About this explorer" aria-haspopup="dialog">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
       <span class="btn-label">About</span>
     </button>
-    <!-- Mobile search icon shown when nav-center is hidden -->
-    <button class="nav-icon-btn mob-search-btn" id="mob-search-btn" aria-label="Search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <button class="nav-icon-btn mob-search-btn" id="mob-search-btn" aria-label="Search counties">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     </button>
   </div>
 </nav>
 
-<!-- COMMAND PALETTE -->
-<div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Search counties">
+<!-- COMMAND PALETTE — focus trap handled in ui.js -->
+<div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Search counties" aria-hidden="true">
   <div id="cmd-palette">
     <div class="cmd-header">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="cmd-input" placeholder="Search counties…" autocomplete="off" aria-label="Search input">
-      <span class="cmd-esc" id="cmd-esc">Esc</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="cmd-input"
+             placeholder="Search counties…"
+             autocomplete="off"
+             spellcheck="false"
+             aria-label="Search counties"
+             aria-autocomplete="list"
+             aria-controls="cmd-results">
+      <span class="cmd-esc" id="cmd-esc" role="button" tabindex="0" aria-label="Close search">Esc</span>
     </div>
-    <div id="cmd-results" role="listbox"></div>
+    <!-- Compare counter — shows how many slots are filled -->
+    <div id="cmd-compare-counter" class="cmd-compare-hint" aria-live="polite" aria-atomic="true"></div>
+    <div id="cmd-results" role="listbox" aria-label="County results"></div>
   </div>
 </div>
 
-<!-- ABOUT DRAWER -->
-<div id="about-overlay"></div>
-<div id="about-drawer" role="dialog" aria-label="About this explorer">
+<!-- ABOUT DRAWER — focus trap handled in ui.js -->
+<div id="about-overlay" aria-hidden="true"></div>
+<div id="about-drawer" role="dialog" aria-modal="true" aria-label="About this explorer" aria-hidden="true">
   <div class="drawer-header">
     <div class="drawer-title">About this Explorer</div>
-    <button class="drawer-close" id="drawer-close">Close</button>
+    <button class="drawer-close" id="drawer-close" aria-label="Close about drawer">Close</button>
   </div>
   <div class="drawer-body">
     <div class="drawer-section">
       <div class="updated-badge">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
         Data updated 2025–2026
       </div>
       <h3>What is this?</h3>
@@ -82,7 +115,7 @@
           <span>Gross County Product figures are estimates derived from CRA and World Bank Kenya subnational data (2020–2023). They are indicative, not audited.</span>
         </div>
         <div class="source-item">
-          <strong>County Governments & CIDP Reports</strong>
+          <strong>County Governments &amp; CIDP Reports</strong>
           <span>County Integrated Development Plans (2023–2027) inform industry, landmark, and connectivity data.</span>
         </div>
       </div>
@@ -95,199 +128,226 @@
     </div>
     <div class="drawer-section">
       <h3>How to Use</h3>
-      <p>Click or tap any county on the map to explore its data, economy, and sub-counties. Use the <strong>Compare</strong> button to pin up to 3 counties and view them side by side. On mobile, tap the map then use the panel that slides up from the bottom. Download county data as CSV from the sidebar.</p>
+      <p>Click or tap any county on the map to explore its data, economy, and sub-counties. Use the <strong>Compare</strong> button to pin up to 3 counties and view them side by side. On mobile, tap the map then use the panel that slides up from the bottom. Download county data as CSV from the sidebar. Use <strong>Share</strong> to copy a direct link to the current county. Search supports county name, region, governor, industries, and landmarks.</p>
     </div>
     <div class="drawer-section">
       <div class="credit-row">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         GeoJSON map data via mikelmaron/kenya-election-data
       </div>
     </div>
   </div>
 </div>
 
-<!-- COMPARE BAR -->
-<div id="compare-bar" role="region" aria-label="Compare counties">
-  <div class="compare-label">Compare</div>
-  <div class="compare-slots" id="compare-slots"></div>
+<!-- COMPARE BAR — fixed at bottom, slides up when counties are pinned -->
+<div id="compare-bar" role="region" aria-label="County comparison bar" aria-live="polite">
+  <div class="compare-label" aria-hidden="true">Compare</div>
+  <!-- Live slot counter for assistive tech -->
+  <div class="sr-only" id="compare-sr-status" aria-live="polite" aria-atomic="true"></div>
+  <div class="compare-slots" id="compare-slots" role="group" aria-label="Pinned counties"></div>
   <div class="compare-actions">
-    <button class="compare-go-btn" id="compare-go-btn" disabled>View Comparison</button>
-    <button class="compare-clear-btn" id="compare-clear-btn">Clear</button>
+    <button class="compare-go-btn" id="compare-go-btn" disabled aria-disabled="true">View Comparison</button>
+    <button class="compare-clear-btn" id="compare-clear-btn" aria-label="Clear all pinned counties">Clear</button>
   </div>
 </div>
 
-<!-- COMPARE MODAL -->
-<div id="compare-modal" role="dialog" aria-modal="true" aria-label="County comparison">
+<!-- COMPARE MODAL — focus trap in ui.js -->
+<div id="compare-modal" role="dialog" aria-modal="true" aria-label="County comparison" aria-hidden="true">
   <div id="compare-modal-inner">
     <div class="modal-header">
       <div>
         <div class="modal-title">County Comparison</div>
-        <div class="modal-subtitle"></div>
+        <div class="modal-subtitle" id="compare-modal-subtitle"></div>
       </div>
-      <button class="modal-close" id="compare-modal-close">Close</button>
+      <button class="modal-close" id="compare-modal-close" aria-label="Close comparison">Close</button>
     </div>
     <div id="compare-modal-body"></div>
   </div>
 </div>
 
 <div id="main">
-  <!-- MAP (default view on mobile) -->
-  <main id="map-wrap" aria-label="Kenya county map">
-    <svg id="svg-map" aria-hidden="true"></svg>
-    <div id="hover-tip" role="tooltip"></div>
+  <!-- MAP (default view on mobile, left panel on desktop) -->
+  <main id="map-wrap" aria-label="Interactive Kenya county map. Click or press Enter on any county to explore its data.">
+    <svg id="svg-map" aria-hidden="true" focusable="false"></svg>
+    <div id="hover-tip" role="tooltip" aria-hidden="true"></div>
 
-    <!-- Map hint for first-time users -->
-    <div id="map-hint">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <!-- Map hint for first-time users (auto-fades via CSS animation) -->
+    <div id="map-hint" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Tap any county to explore
     </div>
 
-    <!-- Reset zoom button -->
-    <button id="btn-reset-zoom" aria-label="Reset map zoom" title="Reset zoom">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    <button id="btn-reset-zoom" aria-label="Reset map zoom to default">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
     </button>
 
-    <!-- Mobile panel toggle -->
-    <button id="mob-panel-btn" aria-label="View county details" style="display:none">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-      <span id="mob-panel-btn-label">Details</span>
-    </button>
   </main>
 
   <!-- SIDEBAR / BOTTOM SHEET -->
   <aside id="sidebar" aria-label="County information panel">
-    <!-- Mobile drag handle -->
-    <div class="sheet-handle" id="sheet-handle" aria-hidden="true">
+    <!--
+      Drag handle — provides a visible affordance for the swipe gesture.
+      A visually-hidden description explains the interaction for screen readers.
+    -->
+    <div class="sheet-handle" id="sheet-handle">
       <div class="sheet-handle-bar"></div>
+      <!-- Hidden expand button as a keyboard-accessible alternative to dragging -->
+      <button class="sr-only sheet-expand-btn" id="sheet-expand-btn"
+              aria-label="Expand or collapse county panel">
+        Toggle panel
+      </button>
     </div>
 
-    <div id="placeholder">
+    <div id="placeholder" aria-live="polite">
       <h3>Explore Kenya</h3>
       <p>Click any county on the map to explore its data, economy, and sub-counties.</p>
-      <div class="ph-circle"><div class="ph-dot"></div></div>
-      <div class="ph-stats">
+      <div class="ph-circle" aria-hidden="true"><div class="ph-dot"></div></div>
+      <div class="ph-stats" aria-label="Quick facts">
         <div class="ph-stat"><div class="ph-stat-val">47</div><div class="ph-stat-label">Counties</div></div>
-        <div class="ph-stat"><div class="ph-stat-val">55M</div><div class="ph-stat-label">Population</div></div>
+        <div class="ph-stat"><div class="ph-stat-val">55M</div><div class="ph-stat-label">Est. Population</div></div>
       </div>
     </div>
 
-    <div id="county-panel">
+    <div id="county-panel" aria-live="polite" aria-atomic="false">
       <div class="county-hero">
-        <div class="hero-band" id="c-band"></div>
+        <div class="hero-band" id="c-band" aria-hidden="true"></div>
         <div class="hero-body">
           <div class="hero-top">
             <div class="hero-left">
-              <!-- County name — inline with number -->
               <div class="county-name-row">
-                <div class="county-name" id="c-name"></div>
-                <div class="county-code-badge" id="c-code-badge"></div>
+                <h1 class="county-name" id="c-name"></h1>
+                <div class="county-code-badge" id="c-code-badge" aria-label="County number"></div>
               </div>
             </div>
-            <button class="compare-pin-btn" id="btn-pin-county">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+            <button class="compare-pin-btn" id="btn-pin-county"
+                    aria-label="Add to comparison"
+                    aria-pressed="false">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
               Compare
             </button>
           </div>
 
-          <div class="key-facts">
+          <dl class="key-facts" aria-label="Key county statistics">
             <div class="kf-cell">
-              <div class="kf-icon" style="background:#edf2fb">
+              <div class="kf-icon kf-icon--pop" aria-hidden="true">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2a5caa" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
               <div class="kf-text">
-                <div class="kf-label">Population</div>
-                <div class="kf-value" id="c-pop"></div>
-                <div class="kf-pct" id="c-pct-pill"></div>
+                <dt class="kf-label">Population</dt>
+                <dd class="kf-value" id="c-pop"></dd>
+                <dd class="kf-pct" id="c-pct-pill"></dd>
               </div>
             </div>
             <div class="kf-cell">
-              <div class="kf-icon" style="background:#f0fdf4">
+              <div class="kf-icon kf-icon--hq" aria-hidden="true">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               </div>
               <div class="kf-text">
-                <div class="kf-label">County HQ</div>
-                <div class="kf-value sm" id="c-hq"></div>
+                <dt class="kf-label">County HQ</dt>
+                <dd class="kf-value sm" id="c-hq"></dd>
               </div>
             </div>
             <div class="kf-cell">
-              <div class="kf-icon" style="background:#fff7ed">
+              <div class="kf-icon kf-icon--area" aria-hidden="true">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
               <div class="kf-text">
-                <div class="kf-label">Area km²</div>
-                <div class="kf-value" id="c-area"></div>
+                <dt class="kf-label">Area km²</dt>
+                <dd class="kf-value" id="c-area"></dd>
               </div>
             </div>
             <div class="kf-cell">
-              <div class="kf-icon" style="background:#fdf4ff">
+              <div class="kf-icon kf-icon--density" aria-hidden="true">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               </div>
               <div class="kf-text">
-                <div class="kf-label">Density /km²</div>
-                <div class="kf-value" id="c-density"></div>
+                <dt class="kf-label">Density /km²</dt>
+                <dd class="kf-value" id="c-density"></dd>
               </div>
             </div>
-          </div>
+          </dl>
 
           <div class="hero-meta">
             <div class="governor-row">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-              <span class="gov-label">Gov.</span><strong id="c-governor"></strong>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <span class="gov-label">Gov.</span>
+              <strong id="c-governor" aria-label="Governor"></strong>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
-        <button class="tab-btn" data-tab="economy" role="tab" aria-selected="false">Economy</button>
-        <button class="tab-btn" data-tab="geography" role="tab" aria-selected="false">Geography</button>
-        <button class="tab-btn" data-tab="subcounties" role="tab" aria-selected="false">Sub-Counties</button>
+      <!-- Tab bar — follows ARIA tabs pattern -->
+      <div class="tab-bar" role="tablist" aria-label="County information tabs">
+        <button class="tab-btn active" data-tab="overview"
+                role="tab" id="tab-btn-overview"
+                aria-selected="true" aria-controls="tab-overview">Overview</button>
+        <button class="tab-btn" data-tab="economy"
+                role="tab" id="tab-btn-economy"
+                aria-selected="false" aria-controls="tab-economy">Economy</button>
+        <button class="tab-btn" data-tab="geography"
+                role="tab" id="tab-btn-geography"
+                aria-selected="false" aria-controls="tab-geography">Geography</button>
+        <button class="tab-btn" data-tab="subcounties"
+                role="tab" id="tab-btn-subcounties"
+                aria-selected="false" aria-controls="tab-subcounties">Sub-Counties</button>
       </div>
 
       <div class="tab-contents">
-        <div class="tab-pane active" id="tab-overview" role="tabpanel">
-          <div><div class="sec-title">About</div><div class="about-card" id="c-about"></div></div>
+        <div class="tab-pane active" id="tab-overview"
+             role="tabpanel" aria-labelledby="tab-btn-overview" tabindex="0">
+          <div><div class="sec-title">About</div><p class="about-card" id="c-about"></p></div>
           <div>
             <div class="sec-title">Did You Know</div>
-            <div class="fact-box"><div class="fact-label">Fun Fact</div><div class="fact-text" id="c-fact"></div></div>
+            <div class="fact-box">
+              <div class="fact-label">Fun Fact</div>
+              <p class="fact-text" id="c-fact"></p>
+            </div>
           </div>
-          <div><div class="sec-title">Notable Places</div><div class="item-list" id="c-landmarks"></div></div>
+          <div><div class="sec-title">Notable Places</div><ul class="item-list" id="c-landmarks" aria-label="Notable landmarks"></ul></div>
         </div>
 
-        <div class="tab-pane" id="tab-economy" role="tabpanel">
+        <div class="tab-pane" id="tab-economy"
+             role="tabpanel" aria-labelledby="tab-btn-economy" tabindex="0">
           <div>
             <div class="sec-title">Gross County Product</div>
             <div class="econ-card">
               <div class="econ-top">
                 <div class="gcp-amount" id="c-gcp"></div>
                 <div class="gcp-sub">Estimated annual GCP — relative to Nairobi</div>
-              <div class="gcp-bar-track"><div class="gcp-bar-fill" id="c-gcp-bar"></div></div>
+                <div class="gcp-bar-track" role="img" aria-label="GCP bar relative to Nairobi">
+                  <div class="gcp-bar-fill" id="c-gcp-bar"></div>
+                </div>
                 <div class="gcp-tier-tag" id="c-tier"></div>
               </div>
-              <div class="econ-highlights" id="c-highlights"></div>
+              <ul class="econ-highlights" id="c-highlights" aria-label="Economic highlights"></ul>
             </div>
           </div>
-          <div><div class="sec-title">Key Industries</div><div class="chip-row" id="c-industries"></div></div>
+          <div>
+            <div class="sec-title">Key Industries</div>
+            <div class="chip-row" id="c-industries" role="list" aria-label="Key industries"></div>
+          </div>
         </div>
 
-        <div class="tab-pane" id="tab-geography" role="tabpanel">
-          <div><div class="sec-title">Landscape & Climate</div><div class="geo-2col" id="c-geo"></div></div>
-          <div><div class="sec-title">Transport & Connectivity</div><div class="item-list" id="c-connect"></div></div>
+        <div class="tab-pane" id="tab-geography"
+             role="tabpanel" aria-labelledby="tab-btn-geography" tabindex="0">
+          <div><div class="sec-title">Landscape &amp; Climate</div><dl class="geo-2col" id="c-geo"></dl></div>
+          <div><div class="sec-title">Transport &amp; Connectivity</div><ul class="item-list" id="c-connect" aria-label="Transport and connectivity"></ul></div>
         </div>
 
-        <div class="tab-pane" id="tab-subcounties" role="tabpanel">
-          <div><div class="sec-title" id="c-sc-title">Sub-Counties</div><div class="sc-grid" id="c-sc"></div></div>
+        <div class="tab-pane" id="tab-subcounties"
+             role="tabpanel" aria-labelledby="tab-btn-subcounties" tabindex="0">
+          <div><div class="sec-title" id="c-sc-title">Sub-Counties</div><div class="sc-grid" id="c-sc" role="list"></div></div>
         </div>
       </div>
 
       <div class="action-bar">
-        <button class="act-btn secondary" id="btn-share">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <button class="act-btn secondary" id="btn-share" aria-label="Share this county">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Share
         </button>
-        <button class="act-btn primary" id="btn-csv">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <button class="act-btn primary" id="btn-csv" aria-label="Download county data as CSV">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
       </div>
@@ -295,6 +355,8 @@
   </aside>
 </div>
 
-<script src="script.js"></script>
+<!-- Modules loaded as ES modules. County data is separated into counties.js -->
+<!-- Single entry point — wires map.js and ui.js without circular imports -->
+<script type="module" src="main.js"></script>
 </body>
 </html>
