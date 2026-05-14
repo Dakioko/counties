@@ -7,7 +7,7 @@
 :root {
   /* Layout */
   --nav-h:       56px;
-  --sidebar-w:   480px;
+  --sidebar-w:   1000px;
 
   /* Palette */
   --bg:          #fafaf9;
