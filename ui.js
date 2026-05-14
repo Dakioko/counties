@@ -361,13 +361,6 @@ export function showCounty(data, mapPathEl) {
     setTimeout(() => mapHint.remove(), 450);
   }
 
-  // Dismiss the desktop hint bar on first county selection
-  const hintBar = document.getElementById('hint-bar');
-  if (hintBar && !hintBar.classList.contains('dismissed')) {
-    hintBar.classList.add('dismissed');
-    setTimeout(() => { hintBar.remove(); document.getElementById('main').style.height = `calc(100vh - var(--nav-h))`; }, 350);
-  }
-
   // URL deep-link — update address bar without reloading (skip if same county)
   const url = new URL(window.location.href);
   if (url.searchParams.get('county') !== data.name) {
