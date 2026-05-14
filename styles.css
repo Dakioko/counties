@@ -7,7 +7,7 @@
 :root {
   /* Layout */
   --nav-h:       56px;
-  --sidebar-w:   1000px;
+  --sidebar-w:   800px;
 
   /* Palette */
   --bg:          #fafaf9;
@@ -1273,7 +1273,7 @@ body {
     box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
     z-index: 10;
     overflow: hidden;
-    transform: translateY(calc(100% - var(--sheet-peek)));
+    transform: translateY(calc(100% - var(--sheet-mid)));
     transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
     order: 2;
   }
