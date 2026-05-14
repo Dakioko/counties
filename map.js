@@ -158,12 +158,18 @@ async function fetchGeoJSON() {
  * Fetches GeoJSON, renders county paths, and calls onCountyClick(countyData, pathEl)
  * when a county is activated. Also handles deep-link on load.
  *
+ * FIX: added `return` before fetchGeoJSON() so the promise chain is returned
+ * to main.js, allowing it to call .then() to dispatch the 'mapready' event.
+ * Without this return, initMap() returned undefined and main.js crashed with
+ * "Cannot read properties of undefined (reading 'then')".
+ *
  * @param {(data: object, el: SVGPathElement|null) => void} onCountyClick
  */
 export function initMap(onCountyClick) {
   mapWrap.classList.add('loading');
 
-  fetchGeoJSON()
+  // ── FIX: `return` was missing here ───────────────────────────────────────
+  return fetchGeoJSON()
     .then(geoData => {
       mapWrap.classList.remove('loading');
       buildMatchCache(geoData.features);

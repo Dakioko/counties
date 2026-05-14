@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Flag_of_Kenya.svg/1200px-Flag_of_Kenya.svg.png">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Content-Security-Policy: restrict resources to known trusted origins 
+  <!-- Content-Security-Policy: restrict resources to known trusted origins
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     script-src 'self' https://cdnjs.cloudflare.com;
@@ -22,7 +22,7 @@
     connect-src 'self' https://cdn.jsdelivr.net;
   ">-->
 
-  <title>Karibu Kenya |County Explorer</title>
+  <title>Karibu Kenya | County Explorer</title>
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23006600'/><text x='16' y='23' font-family='Arial Black,sans-serif' font-size='15' font-weight='900' fill='white' text-anchor='middle' letter-spacing='-0.5'>KE</text></svg>">
 
@@ -36,7 +36,6 @@
 <body>
 
 <nav id="top-nav" aria-label="Main navigation">
-  <!-- Clicking the brand resets to home state (handled in ui.js) -->
   <div class="brand" role="button" tabindex="0" aria-label="Reset to home view">
     <div class="brand-dot" aria-hidden="true"></div>
     Karibu Kenya
@@ -50,12 +49,11 @@
   </div>
   <div class="nav-right">
     <button class="nav-icon-btn" id="btn-tour" aria-label="Show tour">
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M12 16v-4M12 8h.01"/>
-  </svg>
-  <span class="btn-label">Tour</span>
-</button>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+      </svg>
+      <span class="btn-label">Tour</span>
+    </button>
     <button class="nav-icon-btn" id="btn-about" aria-label="About this explorer" aria-haspopup="dialog">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
       <span class="btn-label">About</span>
@@ -66,7 +64,7 @@
   </div>
 </nav>
 
-<!-- COMMAND PALETTE — focus trap handled in ui.js -->
+<!-- COMMAND PALETTE -->
 <div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Search counties" aria-hidden="true">
   <div id="cmd-palette">
     <div class="cmd-header">
@@ -80,13 +78,12 @@
              aria-controls="cmd-results">
       <span class="cmd-esc" id="cmd-esc" role="button" tabindex="0" aria-label="Close search">Esc</span>
     </div>
-    <!-- Compare counter — shows how many slots are filled -->
     <div id="cmd-compare-counter" class="cmd-compare-hint" aria-live="polite" aria-atomic="true"></div>
     <div id="cmd-results" role="listbox" aria-label="County results"></div>
   </div>
 </div>
 
-<!-- ABOUT DRAWER — focus trap handled in ui.js -->
+<!-- ABOUT DRAWER -->
 <div id="about-overlay" aria-hidden="true"></div>
 <div id="about-drawer" role="dialog" aria-modal="true" aria-label="About this explorer" aria-hidden="true">
   <div class="drawer-header">
@@ -146,10 +143,9 @@
   </div>
 </div>
 
-<!-- COMPARE BAR — fixed at bottom, slides up when counties are pinned -->
+<!-- COMPARE BAR -->
 <div id="compare-bar" role="region" aria-label="County comparison bar" aria-live="polite">
   <div class="compare-label" aria-hidden="true">Compare</div>
-  <!-- Live slot counter for assistive tech -->
   <div class="sr-only" id="compare-sr-status" aria-live="polite" aria-atomic="true"></div>
   <div class="compare-slots" id="compare-slots" role="group" aria-label="Pinned counties"></div>
   <div class="compare-actions">
@@ -158,7 +154,7 @@
   </div>
 </div>
 
-<!-- COMPARE MODAL — focus trap in ui.js -->
+<!-- COMPARE MODAL -->
 <div id="compare-modal" role="dialog" aria-modal="true" aria-label="County comparison" aria-hidden="true">
   <div id="compare-modal-inner">
     <div class="modal-header">
@@ -171,36 +167,11 @@
     <div id="compare-modal-body"></div>
   </div>
 </div>
-
-<div id="hint-bar" aria-label="How to use the map">
-  <span class="hint-bar-item">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Click any county to explore
-  </span>
-  <span class="hint-bar-sep" aria-hidden="true">·</span>
-  <span class="hint-bar-item">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    Search counties
-  </span>
-  <span class="hint-bar-sep" aria-hidden="true">·</span>
-  <span class="hint-bar-item">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    Pin counties to compare
-  </span>
-  <span class="hint-bar-sep" aria-hidden="true">·</span>
-  <span class="hint-bar-item">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-    Scroll the panel for more
-  </span>
-</div>
-
 <div id="main">
-  <!-- MAP (default view on mobile, left panel on desktop) -->
   <main id="map-wrap" aria-label="Interactive Kenya county map. Click or press Enter on any county to explore its data.">
     <svg id="svg-map" aria-hidden="true" focusable="false"></svg>
     <div id="hover-tip" role="tooltip" aria-hidden="true"></div>
 
-    <!-- Mobile-only persistent hint — hidden by JS once first county is tapped -->
     <div id="map-hint" aria-hidden="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Tap any county to explore
@@ -209,20 +180,13 @@
     <button id="btn-reset-zoom" aria-label="Reset map zoom to default">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
     </button>
-
   </main>
 
   <!-- SIDEBAR / BOTTOM SHEET -->
   <aside id="sidebar" aria-label="County information panel">
-    <!--
-      Drag handle — provides a visible affordance for the swipe gesture.
-      A visually-hidden description explains the interaction for screen readers.
-    -->
     <div class="sheet-handle" id="sheet-handle">
       <div class="sheet-handle-bar"></div>
-      <!-- Hidden expand button as a keyboard-accessible alternative to dragging -->
-      <button class="sr-only sheet-expand-btn" id="sheet-expand-btn"
-              aria-label="Expand or collapse county panel">
+      <button class="sr-only sheet-expand-btn" id="sheet-expand-btn" aria-label="Expand or collapse county panel">
         Toggle panel
       </button>
     </div>
@@ -306,7 +270,7 @@
         </div>
       </div>
 
-      <!-- Mobile compare bar — shown inline inside sidebar when counties are pinned -->
+      <!-- Mobile compare bar -->
       <div id="compare-bar-mobile" aria-label="Compare pinned counties" aria-live="polite">
         <span class="cbar-mob-label">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -316,7 +280,7 @@
         <button class="compare-clear-btn cbar-mob-clear" id="compare-clear-btn-mobile" aria-label="Clear pinned counties">Clear</button>
       </div>
 
-      <!-- Tab bar — follows ARIA tabs pattern -->
+      <!-- Tab bar -->
       <div class="tab-bar" role="tablist" aria-label="County information tabs">
         <button class="tab-btn active" data-tab="overview"
                 role="tab" id="tab-btn-overview"
@@ -393,68 +357,169 @@
     </div>
   </aside>
 </div>
-<!-- ONBOARDING MODAL -->
-<div id="onboarding-modal" class="onboarding-modal" role="dialog" aria-modal="true" aria-label="Welcome to Kenya County Explorer" aria-hidden="true">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ONBOARDING MODAL — redesigned
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="onboarding-modal" class="onboarding-modal" role="dialog" aria-modal="true"
+     aria-label="Welcome to Karibu Kenya — County Explorer" aria-hidden="true">
+
   <div class="onboarding-content">
-    <button class="onboarding-close" id="onboarding-close" aria-label="Close onboarding">Skip</button>
+
+    <!-- Progress bar -->
+    <div class="onboarding-progress" role="progressbar"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="33"
+         aria-label="Tour progress">
+      <div class="onboarding-progress-fill" id="onboarding-progress-fill"></div>
+    </div>
+
+    <!-- Quiet skip -->
+    <button class="onboarding-skip" id="onboarding-close" aria-label="Skip tour">Skip</button>
+
     <div class="onboarding-steps">
+
+      <!-- ── Step 0: Explore the map ── -->
       <div class="onboarding-step active" data-step="0">
-        <div class="onboarding-icon">🗺️</div>
-        <h2>Explore Kenya's 47 Counties</h2>
-        <p>Welcome to the Kenya County Explorer — your interactive guide to every county's population, economy, geography, and culture.</p>
-        <div class="onboarding-demo-map">
-          <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="30" y="20" width="140" height="80" rx="6" fill="url(#mapGrad)" stroke="#bbb7b0" stroke-width="1"/>
-            <defs><linearGradient id="mapGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e8e4dc"/><stop offset="100%" stop-color="#ddd9d0"/></linearGradient></defs>
-            <path d="M60 45 L80 35 L100 42 L90 60 L70 58 L60 45Z" fill="#4f46e5" stroke="white" stroke-width="1.5" opacity="0.9"/>
-            <path d="M110 40 L130 35 L140 50 L125 60 L110 50 L110 40Z" fill="#059669" stroke="white" stroke-width="1.5" opacity="0.9"/>
-            <path d="M70 70 L90 65 L100 80 L80 85 L70 70Z" fill="#ea580c" stroke="white" stroke-width="1.5" opacity="0.9"/>
-            <text x="100" y="105" text-anchor="middle" font-size="9" fill="#6b6965">Click any coloured area →</text>
+        <div class="onboarding-header onboarding-header--map">
+          <div class="onboarding-header-bg" aria-hidden="true"></div>
+          <div class="onboarding-header-icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="24" fill="rgba(255,255,255,0.12)"/>
+              <path d="M24 10C18.477 10 14 14.477 14 20c0 8.5 10 18 10 18s10-9.5 10-18c0-5.523-4.477-10-10-10z" fill="white" opacity="0.95"/>
+              <circle cx="24" cy="20" r="3.5" fill="#1e4a8a"/>
+            </svg>
+          </div>
+          <svg class="onboarding-map-deco" viewBox="0 0 220 110" fill="none" aria-hidden="true">
+            <path d="M30 55 L55 30 L80 40 L90 65 L70 80 L45 72 Z" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+            <path d="M95 28 L122 22 L138 42 L128 62 L105 58 L95 40 Z" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+            <path d="M145 50 L168 44 L180 64 L165 78 L148 70 Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.25)" stroke-width="1.2"/>
+            <path d="M48 82 L72 76 L85 92 L65 100 L48 90 Z" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1.2"/>
+            <circle cx="62" cy="55" r="10" fill="rgba(255,255,255,0.15)" class="ob-pulse"/>
+            <circle cx="62" cy="55" r="5" fill="white" opacity="0.9"/>
           </svg>
         </div>
-        <button class="onboarding-next" data-next="0">Next →</button>
+
+        <div class="onboarding-body">
+          <p class="onboarding-eyebrow">Step 1 of 3</p>
+          <h2>Explore Kenya's 47 Counties</h2>
+          <p>Each coloured region on the map is a county. Click or tap any one to see its population, economy, geography, landmarks, and more.</p>
+        </div>
+
+        <div class="onboarding-footer">
+          <div class="onboarding-dots" id="onboarding-dots"></div>
+          <button class="onboarding-btn-primary" data-next="0">
+            See how search works
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
+      <!-- ── Step 1: Search ── -->
       <div class="onboarding-step" data-step="1">
-        <div class="onboarding-icon">🔍</div>
-        <h2>Search Any County</h2>
-        <p>Use the search bar at the top to quickly find any of Kenya's 47 counties by name, region, industry, or governor.</p>
-        <div class="onboarding-demo-search">
-          <div class="demo-search-bar">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <span>Search counties…</span>
+        <div class="onboarding-header onboarding-header--search">
+          <div class="onboarding-header-bg" aria-hidden="true"></div>
+          <div class="onboarding-header-icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="24" fill="rgba(255,255,255,0.12)"/>
+              <circle cx="22" cy="22" r="8" stroke="white" stroke-width="2.5" opacity="0.95"/>
+              <path d="M28 28l5 5" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
+            </svg>
+          </div>
+          <div class="ob-search-demo" aria-hidden="true">
+            <div class="ob-search-bar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <span class="ob-search-typing"></span>
+              <span class="ob-search-cursor">|</span>
+            </div>
+            <div class="ob-search-results">
+              <div class="ob-result ob-result--1">
+                <span class="ob-result-dot" style="background:#1e4a8a"></span>Nairobi
+              </div>
+              <div class="ob-result ob-result--2">
+                <span class="ob-result-dot" style="background:#059669"></span>Nakuru
+              </div>
+              <div class="ob-result ob-result--3">
+                <span class="ob-result-dot" style="background:#ea580c"></span>Nyeri
+              </div>
+            </div>
           </div>
         </div>
-        <p class="onboarding-hint">Pro tip: Press <kbd>⌘K</kbd> or <kbd>Ctrl+K</kbd> to search from anywhere</p>
-        <button class="onboarding-next" data-next="1">Next →</button>
+
+        <div class="onboarding-body">
+          <p class="onboarding-eyebrow">Step 2 of 3</p>
+          <h2>Find Any County Instantly</h2>
+          <p>Search by county name, region, governor, or industry. Results appear as you type.</p>
+          <p class="onboarding-hint">
+            <kbd>⌘K</kbd> <span>or</span> <kbd>Ctrl K</kbd> &nbsp;searches from anywhere on the page
+          </p>
+        </div>
+
+        <div class="onboarding-footer">
+          <button class="onboarding-btn-ghost" data-prev="1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+          </button>
+          <div class="onboarding-dots"></div>
+          <button class="onboarding-btn-primary" data-next="1">
+            One more thing
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
+      <!-- ── Step 2: Compare ── -->
       <div class="onboarding-step" data-step="2">
-        <div class="onboarding-icon">⭐</div>
-        <h2>Compare Counties</h2>
-        <p>Pin up to 3 counties with the <strong>Compare</strong> button to see population, economy, and key facts side by side.</p>
-        <div class="onboarding-demo-compare">
-          <div class="demo-compare-bar">
-            <span class="demo-star">⭐</span>
-            <span>Mombasa</span>
-            <span class="demo-star">⭐</span>
-            <span>Nairobi</span>
-            <span class="demo-star">⭐</span>
-            <span>Kisumu</span>
+        <div class="onboarding-header onboarding-header--compare">
+          <div class="onboarding-header-bg" aria-hidden="true"></div>
+          <div class="onboarding-header-icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="24" fill="rgba(255,255,255,0.12)"/>
+              <rect x="13" y="28" width="6" height="10" rx="1.5" fill="white" opacity="0.6"/>
+              <rect x="21" y="20" width="6" height="18" rx="1.5" fill="white" opacity="0.85"/>
+              <rect x="29" y="14" width="6" height="24" rx="1.5" fill="white"/>
+            </svg>
           </div>
-          <button class="demo-compare-btn" disabled>View Comparison</button>
+          <div class="ob-compare-demo" aria-hidden="true">
+            <div class="ob-chip ob-chip--1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Nairobi
+            </div>
+            <div class="ob-chip ob-chip--2">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Mombasa
+            </div>
+            <div class="ob-chip ob-chip--3">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Kisumu
+            </div>
+            <div class="ob-compare-cta">View Comparison →</div>
+          </div>
         </div>
-        <div class="onboarding-nav">
-          <button class="onboarding-prev" data-prev="2">← Back</button>
-          <button class="onboarding-done" id="onboarding-done">Start Exploring →</button>
+
+        <div class="onboarding-body">
+          <p class="onboarding-eyebrow">Step 3 of 3</p>
+          <h2>Compare Counties Side by Side</h2>
+          <p>Pin up to 3 counties with the <strong>Compare</strong> button, then view population, economy, and key facts together.</p>
+        </div>
+
+        <div class="onboarding-footer">
+          <button class="onboarding-btn-ghost" data-prev="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+          </button>
+          <div class="onboarding-dots"></div>
+          <button class="onboarding-btn-primary" id="onboarding-done">
+            Start Exploring
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
         </div>
       </div>
-    </div>
-    <div class="onboarding-dots" id="onboarding-dots"></div>
-  </div>
-</div>
-<!-- Modules loaded as ES modules. County data is separated into counties.js -->
-<!-- Single entry point — wires map.js and ui.js without circular imports -->
+
+    </div><!-- /onboarding-steps -->
+  </div><!-- /onboarding-content -->
+</div><!-- /onboarding-modal -->
+
+<!-- Single entry point -->
 <script type="module" src="main.js"></script>
 </body>
 </html>
