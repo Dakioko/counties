@@ -356,6 +356,41 @@ body {
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+/* ── MOBILE INLINE COMPARE BAR ───────────────────────────────────── */
+#compare-bar-mobile {
+  display: none; /* shown only on mobile when counties are pinned */
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--nav-dark);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cbar-mob-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  flex: 1;
+}
+.cbar-mob-label svg { opacity: 0.6; }
+.cbar-mob-go {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.cbar-mob-clear {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+@media (max-width: 768px) {
+  #compare-bar-mobile.visible { display: flex; }
+  /* Hide the fixed desktop compare bar on mobile — the inline one takes over */
+  #compare-bar { display: none !important; }
+}
+
 /* ── COMPARE BAR ─────────────────────────────────────────────────── */
 #compare-bar {
   position: fixed;
@@ -536,8 +571,49 @@ body {
 .cmp-governor strong { color: var(--text); font-weight: 500; }
 .cmp-governor svg { flex-shrink: 0; opacity: 0.45; }
 
+/* ── HINT BAR ────────────────────────────────────────────────────── */
+#hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 7px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  flex-shrink: 0;
+  user-select: none;
+  overflow: hidden;
+  max-height: 40px;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+}
+#hint-bar.dismissed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+}
+.hint-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hint-bar-item svg { opacity: 0.55; flex-shrink: 0; }
+.hint-bar-sep { color: var(--border-hover); font-size: 14px; }
+
+/* Hide hint-bar on mobile — the #map-hint overlay handles it */
+@media (max-width: 768px) {
+  #hint-bar { display: none; }
+}
+
 /* ── LAYOUT ──────────────────────────────────────────────────────── */
-#main { display: flex; height: calc(100vh - var(--nav-h)); position: relative; }
+#main { display: flex; height: calc(100vh - var(--nav-h) - 34px); position: relative; }
+@media (max-width: 768px) {
+  #main { height: calc(100vh - var(--nav-h)); }
+}
 
 /* ── MAP ─────────────────────────────────────────────────────────── */
 #map-wrap {
@@ -584,25 +660,33 @@ body {
   font-size: 13px;
 }
 
-/* Map hint */
+/* Map hint — persistent on mobile until first county tap, hidden on desktop */
 #map-hint {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(10,31,20,0.85);
-  color: rgba(255,255,255,0.9);
+  background: rgba(10,31,20,0.88);
+  color: rgba(255,255,255,0.92);
   font-size: 12px;
   font-weight: 500;
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: 20px;
-  display: flex;
+  display: none; /* shown only on mobile via media query below */
   align-items: center;
   gap: 6px;
   pointer-events: none;
-  animation: hintFade 4s ease-out forwards;
   white-space: nowrap;
   z-index: 5;
+  transition: opacity 0.4s, transform 0.4s;
+}
+#map-hint.dismissed {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  pointer-events: none;
+}
+@media (max-width: 768px) {
+  #map-hint { display: flex; }
 }
 @keyframes hintFade {
   0%   { opacity: 0; transform: translateX(-50%) translateY(6px); }
@@ -1122,6 +1206,7 @@ body {
 
   #map-wrap { background: linear-gradient(150deg, #1e1c18, #252320); }
   #map-wrap.loading::after { background: linear-gradient(150deg, #1e1c18, #252320); }
+  #hint-bar { background: var(--surface); border-bottom-color: var(--border); }
 
   .county-path { stroke: #111110; }
   .county-path.selected { stroke: #e8e6e2; }

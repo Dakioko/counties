@@ -165,13 +165,35 @@
   </div>
 </div>
 
+<div id="hint-bar" aria-label="How to use the map">
+  <span class="hint-bar-item">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Click any county to explore
+  </span>
+  <span class="hint-bar-sep" aria-hidden="true">·</span>
+  <span class="hint-bar-item">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Search counties
+  </span>
+  <span class="hint-bar-sep" aria-hidden="true">·</span>
+  <span class="hint-bar-item">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Pin counties to compare
+  </span>
+  <span class="hint-bar-sep" aria-hidden="true">·</span>
+  <span class="hint-bar-item">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+    Scroll the panel for more
+  </span>
+</div>
+
 <div id="main">
   <!-- MAP (default view on mobile, left panel on desktop) -->
   <main id="map-wrap" aria-label="Interactive Kenya county map. Click or press Enter on any county to explore its data.">
     <svg id="svg-map" aria-hidden="true" focusable="false"></svg>
     <div id="hover-tip" role="tooltip" aria-hidden="true"></div>
 
-    <!-- Map hint for first-time users (auto-fades via CSS animation) -->
+    <!-- Mobile-only persistent hint — hidden by JS once first county is tapped -->
     <div id="map-hint" aria-hidden="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       Tap any county to explore
@@ -275,6 +297,16 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Mobile compare bar — shown inline inside sidebar when counties are pinned -->
+      <div id="compare-bar-mobile" aria-label="Compare pinned counties" aria-live="polite">
+        <span class="cbar-mob-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span id="cbar-mob-count"></span> pinned
+        </span>
+        <button class="compare-go-btn cbar-mob-go" id="compare-go-btn-mobile" disabled aria-disabled="true">Compare</button>
+        <button class="compare-clear-btn cbar-mob-clear" id="compare-clear-btn-mobile" aria-label="Clear pinned counties">Clear</button>
       </div>
 
       <!-- Tab bar — follows ARIA tabs pattern -->

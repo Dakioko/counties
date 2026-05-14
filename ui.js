@@ -60,6 +60,10 @@ const els = {
   sheetHandle:       document.getElementById('sheet-handle'),
   sheetExpandBtn:    document.getElementById('sheet-expand-btn'),
   compareBar:        document.getElementById('compare-bar'),
+  compareBarMobile:  document.getElementById('compare-bar-mobile'),
+  cbarMobCount:      document.getElementById('cbar-mob-count'),
+  cbarMobGo:         document.getElementById('compare-go-btn-mobile'),
+  cbarMobClear:      document.getElementById('compare-clear-btn-mobile'),
   compareSlots:      document.getElementById('compare-slots'),
   compareGoBtn:      document.getElementById('compare-go-btn'),
   compareClearBtn:   document.getElementById('compare-clear-btn'),
@@ -350,10 +354,26 @@ export function showCounty(data, mapPathEl) {
 
   _updatePinnedPaths?.(pinnedCounties, data.name);
 
-  // URL deep-link — update address bar without reloading
+  // Dismiss the mobile map hint on first county tap
+  const mapHint = document.getElementById('map-hint');
+  if (mapHint && !mapHint.classList.contains('dismissed')) {
+    mapHint.classList.add('dismissed');
+    setTimeout(() => mapHint.remove(), 450);
+  }
+
+  // Dismiss the desktop hint bar on first county selection
+  const hintBar = document.getElementById('hint-bar');
+  if (hintBar && !hintBar.classList.contains('dismissed')) {
+    hintBar.classList.add('dismissed');
+    setTimeout(() => { hintBar.remove(); document.getElementById('main').style.height = `calc(100vh - var(--nav-h))`; }, 350);
+  }
+
+  // URL deep-link — update address bar without reloading (skip if same county)
   const url = new URL(window.location.href);
-  url.searchParams.set('county', data.name);
-  history.replaceState(null, '', url.toString());
+  if (url.searchParams.get('county') !== data.name) {
+    url.searchParams.set('county', data.name);
+    history.replaceState(null, '', url.toString());
+  }
 
   if (isMobile()) {
     setSheet('mid');
@@ -414,6 +434,7 @@ els.btnCsv.addEventListener('click', () => {
   a.download = `${d.name}_County.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 100); // prevent memory leak
+  showToast(`Exported ${d.name} County.csv`);
 });
 
 // ── SHARE — copies URL deep-link ─────────────────────────────────────────────
@@ -516,8 +537,8 @@ function renderCmd(term) {
     main.className = 'cmd-main';
     main.textContent = c.name;
 
-    // Show match context: first matching industry/landmark when querying, else region
-    let subText = c.region;
+    // Show match context: first matching industry/landmark when querying, else HQ city
+    let subText = c.cap || '';
     if (q) {
       const words = q.split(/\s+/).filter(Boolean);
       const hint = [...(c.industries || []), ...(c.landmarks || [])].find(s =>
@@ -551,7 +572,11 @@ function renderCmd(term) {
   els.cmdResults.replaceChildren(labelEl, ...items);
 }
 
-els.cmdInput.addEventListener('input', e => renderCmd(e.target.value));
+let _cmdDebounce;
+els.cmdInput.addEventListener('input', e => {
+  clearTimeout(_cmdDebounce);
+  _cmdDebounce = setTimeout(() => renderCmd(e.target.value), 150);
+});
 
 // ── ABOUT DRAWER ─────────────────────────────────────────────────────────────
 function openAbout() {
@@ -624,56 +649,71 @@ els.btnPinCounty.addEventListener('click', () => {
 });
 
 function renderCompareBar() {
-  if (!pinnedCounties.length) {
+  const hasPinned = pinnedCounties.length > 0;
+  const isReady   = pinnedCounties.length >= 2;
+
+  // ── Desktop bar ──
+  if (!hasPinned) {
     els.compareBar.classList.remove('visible');
-    return;
-  }
-  els.compareBar.classList.add('visible');
+  } else {
+    els.compareBar.classList.add('visible');
+    els.compareGoBtn.disabled = !isReady;
+    els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
+    els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
 
-  const isReady = pinnedCounties.length >= 2;
-  els.compareGoBtn.disabled = !isReady;
-  els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
-  els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
+    els.compareSrStatus.textContent =
+      `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
 
-  els.compareSrStatus.textContent =
-    `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
+    const slotNodes = pinnedCounties.map(name => {
+      const d    = countiesData[name];
+      const slot = document.createElement('div');
+      slot.className = 'compare-slot filled';
 
-  const slotNodes = pinnedCounties.map(name => {
-    const d    = countiesData[name];
-    const slot = document.createElement('div');
-    slot.className = 'compare-slot filled';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'compare-slot-name';
+      nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
+      nameSpan.textContent = name;
 
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'compare-slot-name';
-    nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
-    nameSpan.textContent = name;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'compare-slot-remove';
+      removeBtn.setAttribute('aria-label', `Remove ${name} from comparison`);
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        pinnedCounties = pinnedCounties.filter(n => n !== name);
+        if (selectedCounty) updatePinBtn(selectedCounty.name);
+        renderCompareBar();
+        _updatePinnedPaths?.(pinnedCounties, selectedCounty?.name);
+      });
 
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'compare-slot-remove';
-    removeBtn.setAttribute('aria-label', `Remove ${name} from comparison`);
-    removeBtn.textContent = '×';
-    removeBtn.addEventListener('click', () => {
-      pinnedCounties = pinnedCounties.filter(n => n !== name);
-      if (selectedCounty) updatePinBtn(selectedCounty.name);
-      renderCompareBar();
-      _updatePinnedPaths?.(pinnedCounties, selectedCounty?.name);
+      slot.append(nameSpan, removeBtn);
+      return slot;
     });
 
-    slot.append(nameSpan, removeBtn);
-    return slot;
-  });
+    for (let i = pinnedCounties.length; i < 3; i++) {
+      const slot  = document.createElement('div');
+      slot.className = 'compare-slot';
+      const hint  = document.createElement('span');
+      hint.className = 'compare-slot-empty';
+      hint.textContent = `+ Pin a county (${i + 1}/3)`;
+      slot.appendChild(hint);
+      slotNodes.push(slot);
+    }
 
-  for (let i = pinnedCounties.length; i < 3; i++) {
-    const slot  = document.createElement('div');
-    slot.className = 'compare-slot';
-    const hint  = document.createElement('span');
-    hint.className = 'compare-slot-empty';
-    hint.textContent = `+ Pin a county (${i + 1}/3)`;
-    slot.appendChild(hint);
-    slotNodes.push(slot);
+    els.compareSlots.replaceChildren(...slotNodes);
   }
 
-  els.compareSlots.replaceChildren(...slotNodes);
+  // ── Mobile inline bar ──
+  if (!els.compareBarMobile) return;
+  if (!hasPinned) {
+    els.compareBarMobile.classList.remove('visible');
+  } else {
+    els.compareBarMobile.classList.add('visible');
+    if (els.cbarMobCount) els.cbarMobCount.textContent = pinnedCounties.length;
+    if (els.cbarMobGo) {
+      els.cbarMobGo.disabled = !isReady;
+      els.cbarMobGo.setAttribute('aria-disabled', String(!isReady));
+    }
+  }
 }
 
 els.compareClearBtn.addEventListener('click', () => {
@@ -682,8 +722,19 @@ els.compareClearBtn.addEventListener('click', () => {
   renderCompareBar();
   _updatePinnedPaths?.([], selectedCounty?.name);
 });
+// Mobile bar clear — same action
+els.cbarMobClear?.addEventListener('click', () => {
+  pinnedCounties = [];
+  if (selectedCounty) updatePinBtn(selectedCounty.name);
+  renderCompareBar();
+  _updatePinnedPaths?.([], selectedCounty?.name);
+});
 
 els.compareGoBtn.addEventListener('click', () => {
+  if (pinnedCounties.length >= 2) openCompareModal();
+});
+// Mobile bar go — same action
+els.cbarMobGo?.addEventListener('click', () => {
   if (pinnedCounties.length >= 2) openCompareModal();
 });
 

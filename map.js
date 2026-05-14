@@ -14,7 +14,11 @@ import { countiesData, REGION_COLORS } from './counties.js';
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
 const GEOJSON_URL       = 'https://cdn.jsdelivr.net/gh/mikelmaron/kenya-election-data@master/data/counties.geojson';
-const GEOJSON_CACHE_KEY = 'kenya_counties_geojson_v1';
+
+// Cache key versioned by a hash of the source URL — changing the URL
+// automatically busts the cache without manual version bumps.
+const _urlHash = GEOJSON_URL.split('').reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0);
+const GEOJSON_CACHE_KEY = `kenya_counties_geojson_${(_urlHash >>> 0).toString(36)}`;
 
 // ── ELEMENTS ───────────────────────────────────────────────────────────────
 const mapWrap = document.getElementById('map-wrap');
@@ -120,7 +124,9 @@ export function updatePinnedPaths(pinnedCounties, selectedName) {
   });
 }
 
-// ── GEOJSON FETCH — sessionStorage cache ──────────────────────────────────
+// ── GEOJSON FETCH — sessionStorage cache + timeout ────────────────────────
+const FETCH_TIMEOUT_MS = 10_000;
+
 async function fetchGeoJSON() {
   // Try sessionStorage first for instant repeat-visit loads
   try {
@@ -128,7 +134,17 @@ async function fetchGeoJSON() {
     if (cached) return JSON.parse(cached);
   } catch { /* quota exceeded or parse error — fall through to network */ }
 
-  const res = await fetch(GEOJSON_URL);
+  // Race the fetch against a 10-second timeout
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let res;
+  try {
+    res = await fetch(GEOJSON_URL, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
 
