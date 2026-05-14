@@ -60,10 +60,6 @@ const els = {
   sheetHandle:       document.getElementById('sheet-handle'),
   sheetExpandBtn:    document.getElementById('sheet-expand-btn'),
   compareBar:        document.getElementById('compare-bar'),
-  compareBarMobile:  document.getElementById('compare-bar-mobile'),
-  cbarMobCount:      document.getElementById('cbar-mob-count'),
-  cbarMobGo:         document.getElementById('compare-go-btn-mobile'),
-  cbarMobClear:      document.getElementById('compare-clear-btn-mobile'),
   compareSlots:      document.getElementById('compare-slots'),
   compareGoBtn:      document.getElementById('compare-go-btn'),
   compareClearBtn:   document.getElementById('compare-clear-btn'),
@@ -83,130 +79,7 @@ const els = {
   mobSearchBtn:      document.getElementById('mob-search-btn'),
   brand:             document.querySelector('.brand'),
 };
-// ── ONBOARDING ───────────────────────────────────────────────────────────────
-const ONBOARDING_STORAGE_KEY = 'kenya_county_onboarding_seen';
-let currentStep = 0;
-let totalSteps = 3;
 
-function initOnboarding() {
-  // Check if user has seen onboarding before
-  const hasSeenOnboarding = localStorage.getItem(ONBOARDING_STORAGE_KEY);
-  
-  if (!hasSeenOnboarding) {
-    // Small delay to ensure page is fully rendered
-    setTimeout(() => {
-      openOnboarding();
-    }, 500);
-  }
-}
-
-function openOnboarding() {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-  
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-  currentStep = 0;
-  showStep(0);
-  createOnboardingDots();
-  
-  // Add focus trap
-  createFocusTrap(modal);
-}
-
-function closeOnboarding() {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-  
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-  localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
-}
-
-function showStep(step) {
-  const steps = document.querySelectorAll('.onboarding-step');
-  const dots = document.querySelectorAll('.onboarding-dot');
-  
-  steps.forEach((s, i) => {
-    s.classList.toggle('active', i === step);
-  });
-  
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === step);
-  });
-  
-  currentStep = step;
-}
-
-function createOnboardingDots() {
-  const dotsContainer = document.getElementById('onboarding-dots');
-  if (!dotsContainer) return;
-  
-  dotsContainer.innerHTML = '';
-  for (let i = 0; i < totalSteps; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'onboarding-dot' + (i === currentStep ? ' active' : '');
-    dot.addEventListener('click', () => {
-      showStep(i);
-    });
-    dotsContainer.appendChild(dot);
-  }
-}
-
-function nextStep() {
-  if (currentStep < totalSteps - 1) {
-    showStep(currentStep + 1);
-  } else {
-    closeOnboarding();
-  }
-}
-
-function prevStep() {
-  if (currentStep > 0) {
-    showStep(currentStep - 1);
-  }
-}
-
-// Bind onboarding events after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Wait a moment for all elements to be ready
-  setTimeout(() => {
-    const closeBtn = document.getElementById('onboarding-close');
-    const doneBtn = document.getElementById('onboarding-done');
-    const nextBtns = document.querySelectorAll('[data-next]');
-    const prevBtns = document.querySelectorAll('[data-prev]');
-    
-    if (closeBtn) closeBtn.addEventListener('click', closeOnboarding);
-    if (doneBtn) doneBtn.addEventListener('click', closeOnboarding);
-    
-    nextBtns.forEach(btn => {
-      btn.addEventListener('click', nextStep);
-    });
-    
-    prevBtns.forEach(btn => {
-      btn.addEventListener('click', prevStep);
-    });
-    
-    // Close when clicking outside (on the overlay)
-    const modal = document.getElementById('onboarding-modal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeOnboarding();
-      });
-    }
-  }, 100);
-});
-
-// Call this when the app initializes
-// Add this line to your existing initialization (around where you call initMap)
-// For now, we'll call it from showCounty to ensure it's after render, but better to call once
-let onboardingInitialized = false;
-function tryInitOnboarding() {
-  if (!onboardingInitialized && document.getElementById('onboarding-modal')) {
-    onboardingInitialized = true;
-    initOnboarding();
-  }
-}
 // ── HELPERS ─────────────────────────────────────────────────────────────────
 function isMobile() { return window.innerWidth <= 768; }
 
@@ -477,19 +350,10 @@ export function showCounty(data, mapPathEl) {
 
   _updatePinnedPaths?.(pinnedCounties, data.name);
 
-  // Dismiss the mobile map hint on first county tap
-  const mapHint = document.getElementById('map-hint');
-  if (mapHint && !mapHint.classList.contains('dismissed')) {
-    mapHint.classList.add('dismissed');
-    setTimeout(() => mapHint.remove(), 450);
-  }
-
-  // URL deep-link — update address bar without reloading (skip if same county)
+  // URL deep-link — update address bar without reloading
   const url = new URL(window.location.href);
-  if (url.searchParams.get('county') !== data.name) {
-    url.searchParams.set('county', data.name);
-    history.replaceState(null, '', url.toString());
-  }
+  url.searchParams.set('county', data.name);
+  history.replaceState(null, '', url.toString());
 
   if (isMobile()) {
     setSheet('mid');
@@ -550,7 +414,6 @@ els.btnCsv.addEventListener('click', () => {
   a.download = `${d.name}_County.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 100); // prevent memory leak
-  showToast(`Exported ${d.name} County.csv`);
 });
 
 // ── SHARE — copies URL deep-link ─────────────────────────────────────────────
@@ -653,8 +516,8 @@ function renderCmd(term) {
     main.className = 'cmd-main';
     main.textContent = c.name;
 
-    // Show match context: first matching industry/landmark when querying, else HQ city
-    let subText = c.cap || '';
+    // Show match context: first matching industry/landmark when querying, else region
+    let subText = c.region;
     if (q) {
       const words = q.split(/\s+/).filter(Boolean);
       const hint = [...(c.industries || []), ...(c.landmarks || [])].find(s =>
@@ -688,11 +551,7 @@ function renderCmd(term) {
   els.cmdResults.replaceChildren(labelEl, ...items);
 }
 
-let _cmdDebounce;
-els.cmdInput.addEventListener('input', e => {
-  clearTimeout(_cmdDebounce);
-  _cmdDebounce = setTimeout(() => renderCmd(e.target.value), 150);
-});
+els.cmdInput.addEventListener('input', e => renderCmd(e.target.value));
 
 // ── ABOUT DRAWER ─────────────────────────────────────────────────────────────
 function openAbout() {
@@ -765,71 +624,56 @@ els.btnPinCounty.addEventListener('click', () => {
 });
 
 function renderCompareBar() {
-  const hasPinned = pinnedCounties.length > 0;
-  const isReady   = pinnedCounties.length >= 2;
-
-  // ── Desktop bar ──
-  if (!hasPinned) {
+  if (!pinnedCounties.length) {
     els.compareBar.classList.remove('visible');
-  } else {
-    els.compareBar.classList.add('visible');
-    els.compareGoBtn.disabled = !isReady;
-    els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
-    els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
+    return;
+  }
+  els.compareBar.classList.add('visible');
 
-    els.compareSrStatus.textContent =
-      `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
+  const isReady = pinnedCounties.length >= 2;
+  els.compareGoBtn.disabled = !isReady;
+  els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
+  els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
 
-    const slotNodes = pinnedCounties.map(name => {
-      const d    = countiesData[name];
-      const slot = document.createElement('div');
-      slot.className = 'compare-slot filled';
+  els.compareSrStatus.textContent =
+    `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'compare-slot-name';
-      nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
-      nameSpan.textContent = name;
+  const slotNodes = pinnedCounties.map(name => {
+    const d    = countiesData[name];
+    const slot = document.createElement('div');
+    slot.className = 'compare-slot filled';
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'compare-slot-remove';
-      removeBtn.setAttribute('aria-label', `Remove ${name} from comparison`);
-      removeBtn.textContent = '×';
-      removeBtn.addEventListener('click', () => {
-        pinnedCounties = pinnedCounties.filter(n => n !== name);
-        if (selectedCounty) updatePinBtn(selectedCounty.name);
-        renderCompareBar();
-        _updatePinnedPaths?.(pinnedCounties, selectedCounty?.name);
-      });
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'compare-slot-name';
+    nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
+    nameSpan.textContent = name;
 
-      slot.append(nameSpan, removeBtn);
-      return slot;
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'compare-slot-remove';
+    removeBtn.setAttribute('aria-label', `Remove ${name} from comparison`);
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => {
+      pinnedCounties = pinnedCounties.filter(n => n !== name);
+      if (selectedCounty) updatePinBtn(selectedCounty.name);
+      renderCompareBar();
+      _updatePinnedPaths?.(pinnedCounties, selectedCounty?.name);
     });
 
-    for (let i = pinnedCounties.length; i < 3; i++) {
-      const slot  = document.createElement('div');
-      slot.className = 'compare-slot';
-      const hint  = document.createElement('span');
-      hint.className = 'compare-slot-empty';
-      hint.textContent = `+ Pin a county (${i + 1}/3)`;
-      slot.appendChild(hint);
-      slotNodes.push(slot);
-    }
+    slot.append(nameSpan, removeBtn);
+    return slot;
+  });
 
-    els.compareSlots.replaceChildren(...slotNodes);
+  for (let i = pinnedCounties.length; i < 3; i++) {
+    const slot  = document.createElement('div');
+    slot.className = 'compare-slot';
+    const hint  = document.createElement('span');
+    hint.className = 'compare-slot-empty';
+    hint.textContent = `+ Pin a county (${i + 1}/3)`;
+    slot.appendChild(hint);
+    slotNodes.push(slot);
   }
 
-  // ── Mobile inline bar ──
-  if (!els.compareBarMobile) return;
-  if (!hasPinned) {
-    els.compareBarMobile.classList.remove('visible');
-  } else {
-    els.compareBarMobile.classList.add('visible');
-    if (els.cbarMobCount) els.cbarMobCount.textContent = pinnedCounties.length;
-    if (els.cbarMobGo) {
-      els.cbarMobGo.disabled = !isReady;
-      els.cbarMobGo.setAttribute('aria-disabled', String(!isReady));
-    }
-  }
+  els.compareSlots.replaceChildren(...slotNodes);
 }
 
 els.compareClearBtn.addEventListener('click', () => {
@@ -838,19 +682,8 @@ els.compareClearBtn.addEventListener('click', () => {
   renderCompareBar();
   _updatePinnedPaths?.([], selectedCounty?.name);
 });
-// Mobile bar clear — same action
-els.cbarMobClear?.addEventListener('click', () => {
-  pinnedCounties = [];
-  if (selectedCounty) updatePinBtn(selectedCounty.name);
-  renderCompareBar();
-  _updatePinnedPaths?.([], selectedCounty?.name);
-});
 
 els.compareGoBtn.addEventListener('click', () => {
-  if (pinnedCounties.length >= 2) openCompareModal();
-});
-// Mobile bar go — same action
-els.cbarMobGo?.addEventListener('click', () => {
   if (pinnedCounties.length >= 2) openCompareModal();
 });
 
@@ -1022,6 +855,189 @@ function resetHome() {
 
 els.brand.addEventListener('click', resetHome);
 els.brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') resetHome(); });
+
+// ── ONBOARDING SYSTEM ───────────────────────────────────────────────────────
+const ONBOARDING_STORAGE_KEY = 'kenya_county_onboarding_seen';
+let currentStep = 0;
+let totalSteps = 3;
+let onboardingFocusTrapHandler = null;
+
+function initOnboarding() {
+  // Check if user has seen onboarding before
+  const hasSeenOnboarding = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+  
+  if (!hasSeenOnboarding) {
+    // Small delay to ensure page is fully rendered
+    setTimeout(() => {
+      openOnboarding();
+    }, 500);
+  }
+}
+
+function openOnboarding() {
+  const modal = document.getElementById('onboarding-modal');
+  if (!modal) return;
+  
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  currentStep = 0;
+  showStep(0);
+  createOnboardingDots();
+  
+  // Add focus trap
+  if (onboardingFocusTrapHandler) {
+    modal.removeEventListener('keydown', onboardingFocusTrapHandler);
+  }
+  onboardingFocusTrapHandler = createFocusTrapForModal(modal);
+  modal.addEventListener('keydown', onboardingFocusTrapHandler);
+  
+  // Prevent body scroll
+  document.body.style.overflow = 'hidden';
+}
+
+function closeOnboarding() {
+  const modal = document.getElementById('onboarding-modal');
+  if (!modal) return;
+  
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+  
+  // Remove focus trap
+  if (onboardingFocusTrapHandler) {
+    modal.removeEventListener('keydown', onboardingFocusTrapHandler);
+    onboardingFocusTrapHandler = null;
+  }
+  
+  // Restore body scroll
+  document.body.style.overflow = '';
+  
+  // Focus back on tour button if it exists
+  const tourBtn = document.getElementById('btn-tour');
+  if (tourBtn) tourBtn.focus();
+}
+
+function showStep(step) {
+  const steps = document.querySelectorAll('.onboarding-step');
+  const dots = document.querySelectorAll('.onboarding-dot');
+  
+  steps.forEach((s, i) => {
+    s.classList.toggle('active', i === step);
+  });
+  
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('active', i === step);
+  });
+  
+  currentStep = step;
+}
+
+function createOnboardingDots() {
+  const dotsContainer = document.getElementById('onboarding-dots');
+  if (!dotsContainer) return;
+  
+  dotsContainer.innerHTML = '';
+  for (let i = 0; i < totalSteps; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'onboarding-dot' + (i === currentStep ? ' active' : '');
+    dot.addEventListener('click', () => {
+      showStep(i);
+    });
+    dotsContainer.appendChild(dot);
+  }
+}
+
+function nextStep() {
+  if (currentStep < totalSteps - 1) {
+    showStep(currentStep + 1);
+  } else {
+    closeOnboarding();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    showStep(currentStep - 1);
+  }
+}
+
+// Simple focus trap for modal
+function createFocusTrapForModal(container) {
+  return function(e) {
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    ));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+}
+
+// Bind onboarding events
+function bindOnboardingEvents() {
+  const closeBtn = document.getElementById('onboarding-close');
+  const doneBtn = document.getElementById('onboarding-done');
+  const nextBtns = document.querySelectorAll('[data-next]');
+  const prevBtns = document.querySelectorAll('[data-prev]');
+  const tourBtn = document.getElementById('btn-tour');
+  
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeOnboarding);
+  }
+  
+  if (doneBtn) {
+    doneBtn.addEventListener('click', closeOnboarding);
+  }
+  
+  if (tourBtn) {
+    tourBtn.addEventListener('click', () => {
+      // Reset the stored preference to show tour again
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      openOnboarding();
+    });
+  }
+  
+  nextBtns.forEach(btn => {
+    btn.addEventListener('click', nextStep);
+  });
+  
+  prevBtns.forEach(btn => {
+    btn.addEventListener('click', prevStep);
+  });
+  
+  // Close when clicking outside (on the overlay)
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeOnboarding();
+    });
+  }
+}
+
+// Initialize onboarding when page is ready
+let onboardingInitialized = false;
+function tryInitOnboarding() {
+  if (!onboardingInitialized && document.getElementById('onboarding-modal')) {
+    onboardingInitialized = true;
+    bindOnboardingEvents();
+    initOnboarding();
+  }
+}
+
+// Call this after DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', tryInitOnboarding);
+} else {
+  tryInitOnboarding();
+}
 
 // At the very end of ui.js, add:
 // Initialize onboarding when the page is ready
