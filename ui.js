@@ -1,18 +1,18 @@
 /**
  * ui.js
  * All UI interactions: county panel rendering, tabs, command palette,
- * about drawer, compare bar/modal, CSV export, share (URL deep-link),
+ * compare bar/modal, CSV export, share (URL deep-link),
  * mobile sheet, focus trapping, toast notifications, and keyboard navigation.
  *
- * Imports from: counties.js
- * Wired to map.js via main.js (no direct import of map.js here).
- * Receives g, zoom, findMatch, updatePinnedPaths via connectMap().
+ * Changes from original:
+ * - Removed: about drawer, about overlay, btn-about, btn-tour, onboarding system
+ * - Added: cycling did-you-know with fade transition (setDailyHighlight)
+ * - Timer pauses when placeholder is hidden, resumes on reset
  */
 
 import { countiesData, REGION_COLORS, KENYA_POP_MILLIONS, parseGcpValue } from './counties.js';
 
 // ── MAP BRIDGE ──────────────────────────────────────────────────────────────
-// Populated by connectMap() called from main.js — avoids circular imports.
 let _g, _findMatch, _updatePinnedPaths;
 
 export function connectMap({ g, findMatch, updatePinnedPaths }) {
@@ -70,9 +70,6 @@ const els = {
   cmdInput:          document.getElementById('cmd-input'),
   cmdResults:        document.getElementById('cmd-results'),
   cmdEsc:            document.getElementById('cmd-esc'),
-  aboutOverlay:      document.getElementById('about-overlay'),
-  aboutDrawer:       document.getElementById('about-drawer'),
-  drawerClose:       document.getElementById('drawer-close'),
   navSearchTrigger:  document.getElementById('nav-search-trigger'),
   mobSearchBtn:      document.getElementById('mob-search-btn'),
   brand:             document.querySelector('.brand'),
@@ -152,9 +149,7 @@ function setSheet(state) {
 
 if (isMobile()) setSheet('peek');
 
-function setMobBtnVisible(_visible) {
-  // mob-panel-btn removed — drag handle is the sole sheet interaction affordance
-}
+function setMobBtnVisible(_visible) {}
 
 els.sheetExpandBtn?.addEventListener('click', () => {
   if (sheetState === 'open') {
@@ -224,7 +219,7 @@ els.sheetHandle?.addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-// ── DAILY HIGHLIGHT ──────────────────────────────────────────────────────────
+// ── DAILY HIGHLIGHT — cycling with fade ──────────────────────────────────────
 const HIGHLIGHTS = [
   "Nairobi is the only capital city in the world with a national park within its boundaries.",
   "Lake Turkana is the world's largest permanent desert lake, stretching 290km from north to south.",
@@ -248,18 +243,54 @@ const HIGHLIGHTS = [
   "Turkana County contains the world's largest known field of fossil hominid remains at Sibiloi National Park.",
 ];
 
-function setDailyHighlight() {
+let _highlightTimer  = null;
+let _highlightIndex  = 0;
+
+function cycleHighlight() {
+  const el = document.getElementById('ph-highlight-text');
+  if (!el || els.placeholder.hidden) return;
+
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = HIGHLIGHTS[_highlightIndex];
+    el.style.opacity = '1';
+    _highlightIndex = (_highlightIndex + 1) % HIGHLIGHTS.length;
+  }, 600);
+}
+
+export function setDailyHighlight() {
   const el = document.getElementById('ph-highlight-text');
   if (!el) return;
+
+  // Start from today's index for consistency on first load
   const now      = new Date();
   const start    = new Date(now.getFullYear(), 0, 0);
   const dayOfYear = Math.floor((now - start) / 86_400_000);
-  el.textContent = HIGHLIGHTS[dayOfYear % HIGHLIGHTS.length];
+  _highlightIndex = dayOfYear % HIGHLIGHTS.length;
+
+  // Show first fact immediately, no fade
+  el.textContent  = HIGHLIGHTS[_highlightIndex];
+  el.style.opacity = '1';
+  _highlightIndex = (_highlightIndex + 1) % HIGHLIGHTS.length;
+
+  // Clear any existing timer before starting
+  if (_highlightTimer) clearInterval(_highlightTimer);
+  _highlightTimer = setInterval(cycleHighlight, 8000);
+}
+
+function stopHighlightCycle() {
+  if (_highlightTimer) {
+    clearInterval(_highlightTimer);
+    _highlightTimer = null;
+  }
 }
 
 // ── SHOW COUNTY ──────────────────────────────────────────────────────────────
 export function showCounty(data, mapPathEl) {
   selectedCounty = data;
+
+  // Stop cycling when county panel is visible
+  stopHighlightCycle();
 
   d3.selectAll('.county-path').classed('selected', false);
   if (mapPathEl) d3.select(mapPathEl).classed('selected', true);
@@ -294,9 +325,9 @@ export function showCounty(data, mapPathEl) {
   // Economy tab
   els.cGcp.textContent = data.gcp || '—';
 
-  const gcpNum     = parseGcpValue(data.gcp);
+  const gcpNum      = parseGcpValue(data.gcp);
   const GCP_MAX_LOG = Math.log(2100 + 1);
-  const gcpPct     = gcpNum > 0
+  const gcpPct      = gcpNum > 0
     ? Math.min(100, Math.round((Math.log(gcpNum + 1) / GCP_MAX_LOG) * 100))
     : 0;
   els.cGcpBar.style.width      = gcpPct + '%';
@@ -331,9 +362,9 @@ export function showCounty(data, mapPathEl) {
   // Geography tab
   const geo = data.geo || {};
   const geoFields = [
-    { label: 'Terrain',   val: geo.terrain   },
-    { label: 'Climate',   val: geo.climate   },
-    { label: 'Elevation', val: geo.elevation },
+    { label: 'Terrain',   val: geo.terrain    },
+    { label: 'Climate',   val: geo.climate    },
+    { label: 'Elevation', val: geo.elevation  },
     { label: 'Borders',   val: geo.neighbours },
   ].filter(f => f.val);
 
@@ -404,7 +435,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (els.cmdOverlay.classList.contains('open'))   { closeCmd();          return; }
-  if (els.aboutDrawer.classList.contains('open'))  { closeAbout();        return; }
   if (els.compareModal.classList.contains('open')) { closeCompareModal(); return; }
 });
 
@@ -478,7 +508,7 @@ function closeCmd() {
 
 els.navSearchTrigger.addEventListener('click', openCmd);
 els.navSearchTrigger.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openCmd(); });
-els.mobSearchBtn.addEventListener('click', openCmd);
+els.mobSearchBtn?.addEventListener('click', openCmd);
 els.cmdEsc.addEventListener('click', closeCmd);
 els.cmdEsc.addEventListener('keydown', e => { if (e.key === 'Enter') closeCmd(); });
 els.cmdOverlay.addEventListener('click', e => { if (e.target === els.cmdOverlay) closeCmd(); });
@@ -572,28 +602,6 @@ function renderCmd(term) {
 
 els.cmdInput.addEventListener('input', e => renderCmd(e.target.value));
 
-// ── ABOUT DRAWER ─────────────────────────────────────────────────────────────
-function openAbout() {
-  els.aboutOverlay.classList.add('open');
-  els.aboutOverlay.setAttribute('aria-hidden', 'false');
-  els.aboutDrawer.classList.add('open');
-  els.aboutDrawer.setAttribute('aria-hidden', 'false');
-  els.drawerClose.focus();
-  createFocusTrap(els.aboutDrawer);
-}
-
-function closeAbout() {
-  els.aboutOverlay.classList.remove('open');
-  els.aboutOverlay.setAttribute('aria-hidden', 'true');
-  els.aboutDrawer.classList.remove('open');
-  els.aboutDrawer.setAttribute('aria-hidden', 'true');
-  document.getElementById('btn-about').focus();
-}
-
-document.getElementById('btn-about').addEventListener('click', openAbout);
-els.drawerClose.addEventListener('click', closeAbout);
-els.aboutOverlay.addEventListener('click', closeAbout);
-
 // ── COMPARE SYSTEM ───────────────────────────────────────────────────────────
 function updatePinBtn(name) {
   const isPinned = pinnedCounties.includes(name);
@@ -662,7 +670,7 @@ function renderCompareBar() {
     slot.className = 'compare-slot filled';
 
     const nameSpan = document.createElement('span');
-    nameSpan.className  = 'compare-slot-name';
+    nameSpan.className   = 'compare-slot-name';
     nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
     nameSpan.textContent = name;
 
@@ -713,9 +721,9 @@ function openCompareModal() {
 
   els.compareSubtitle.textContent = counties.map(c => c.name).join(' · ');
 
-  const TIER_LABELS = { high: 'High GCP',   mid: 'Mid GCP',  low: 'Developing' };
-  const TIER_COLORS = { high: '#166534',     mid: '#854d0e',  low: '#475569'    };
-  const TIER_BG     = { high: '#dcfce7',     mid: '#fef9c3',  low: '#f1f5f9'    };
+  const TIER_LABELS = { high: 'High GCP',  mid: 'Mid GCP',  low: 'Developing' };
+  const TIER_COLORS = { high: '#166534',    mid: '#854d0e',  low: '#475569'    };
+  const TIER_BG     = { high: '#dcfce7',    mid: '#fef9c3',  low: '#f1f5f9'    };
 
   const cards = counties.map(c => {
     const color = REGION_COLORS[c.region] || '#2563eb';
@@ -744,10 +752,10 @@ function openCompareModal() {
     header.append(band, titleRow);
 
     const bigStats = [
-      { label: 'Population',   val: c.pop,         accent: true },
-      { label: 'GCP (est.)',   val: c.gcp                       },
-      { label: 'Area km²',     val: c.area                      },
-      { label: 'Density /km²', val: calcDensity(c)              },
+      { label: 'Population',   val: c.pop,        accent: true },
+      { label: 'GCP (est.)',   val: c.gcp                      },
+      { label: 'Area km²',     val: c.area                     },
+      { label: 'Density /km²', val: calcDensity(c)             },
     ].map(({ label, val, accent }) => {
       const cell = document.createElement('div');
       cell.className = 'cmp-big-cell' + (accent ? ' accent' : '');
@@ -771,9 +779,9 @@ function openCompareModal() {
     tierLbl.textContent = 'GCP tier';
     const tierBadge = document.createElement('span');
     Object.assign(tierBadge.style, {
-      background: TIER_BG[c.gcpTier],    color: TIER_COLORS[c.gcpTier],
-      padding: '2px 8px',                borderRadius: '4px',
-      fontSize: '11px',                  fontWeight: '700',
+      background: TIER_BG[c.gcpTier],   color: TIER_COLORS[c.gcpTier],
+      padding: '2px 8px',               borderRadius: '4px',
+      fontSize: '11px',                 fontWeight: '700',
     });
     tierBadge.textContent = TIER_LABELS[c.gcpTier] || '—';
     const tierVal = document.createElement('span');
@@ -786,10 +794,10 @@ function openCompareModal() {
     facts.appendChild(tierRow);
 
     [
-      { label: '% of Kenya pop.', val: pct + '%'                         },
+      { label: '% of Kenya pop.', val: pct + '%'                          },
       { label: 'Sub-counties',    val: String(c.subcounties?.length ?? '—') },
-      { label: 'Climate',         val: c.geo?.climate    || '—'          },
-      { label: 'Elevation',       val: c.geo?.elevation  || '—'          },
+      { label: 'Climate',         val: c.geo?.climate   || '—'            },
+      { label: 'Elevation',       val: c.geo?.elevation || '—'            },
     ].forEach(({ label, val }) => {
       const row = document.createElement('div');
       row.className = 'cmp-fact-row';
@@ -865,6 +873,7 @@ function resetHome() {
   d3.selectAll('.county-path').classed('selected', false);
   els.countyPanel.classList.remove('active');
   els.placeholder.hidden = false;
+  els.placeholder.classList.add('no-anim');
 
   const url = new URL(window.location.href);
   url.searchParams.delete('county');
@@ -878,237 +887,16 @@ function resetHome() {
 els.brand.addEventListener('click', resetHome);
 els.brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') resetHome(); });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ONBOARDING SYSTEM
-// ══════════════════════════════════════════════════════════════════════════════
+// ── INIT — triggered by main.js after map is ready ───────────────────────────
+window.addEventListener('mapready', () => {
+  setDailyHighlight();
+}, { once: true });
 
-const ONBOARDING_STORAGE_KEY = 'kenya_county_onboarding_seen';
-
-let currentStep                = 0;
-let totalSteps                 = 0;
-let onboardingFocusTrapHandler = null;
-
-/**
- * createModalFocusTrap(container, selector?)
- * Generic focus trap used exclusively by the onboarding modal.
- * Renamed from createFocusTrap to avoid a duplicate-declaration SyntaxError
- * in strict-mode ES modules.
- */
-function createModalFocusTrap(container, selector) {
-  const SEL = selector || [
-    'button:not([disabled])',
-    '[href]',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(', ');
-
-  return function handleTrapKey(e) {
-    if (e.key !== 'Tab') return;
-    const focusable = Array.from(container.querySelectorAll(SEL));
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last  = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-}
-
-const STEP_ACCENTS = ['#1e4a8a', '#0d7a55', '#b45309'];
-
-function updateProgressBar(step, total) {
-  const fill = document.getElementById('onboarding-progress-fill');
-  if (!fill) return;
-  const pct = Math.round(((step + 1) / total) * 100);
-  fill.style.width      = pct + '%';
-  fill.style.background = STEP_ACCENTS[step] || 'var(--accent)';
-
-  const bar = fill.closest('[role="progressbar"]');
-  if (bar) bar.setAttribute('aria-valuenow', pct);
-}
-
-function updateButtonAccent(modal, step) {
-  modal.querySelectorAll('.onboarding-btn-primary').forEach(btn => {
-    btn.style.background = STEP_ACCENTS[step] || '';
-    btn.style.boxShadow  = '';
-  });
-}
-
-function openOnboarding() {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-
-  totalSteps  = modal.querySelectorAll('.onboarding-step').length;
-  currentStep = 0;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-
-  showStep(0);
-  createOnboardingDots(modal);
-
-  if (onboardingFocusTrapHandler) {
-    modal.removeEventListener('keydown', onboardingFocusTrapHandler);
-  }
-  onboardingFocusTrapHandler = createModalFocusTrap(modal);
-  modal.addEventListener('keydown', onboardingFocusTrapHandler);
-
-  document.body.style.overflow = 'hidden';
-
-  const firstFocusable = modal.querySelector(
-    'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-  );
-  if (firstFocusable) firstFocusable.focus();
-}
-
-function closeOnboarding() {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-  localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
-
-  if (onboardingFocusTrapHandler) {
-    modal.removeEventListener('keydown', onboardingFocusTrapHandler);
-    onboardingFocusTrapHandler = null;
-  }
-
-  document.body.style.overflow = '';
-  document.getElementById('btn-tour')?.focus();
-}
-
-function showStep(step) {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-
-  const steps = modal.querySelectorAll('.onboarding-step');
-  const dots  = modal.querySelectorAll('.onboarding-dot');
-
-  steps.forEach((s, i) => s.classList.toggle('active', i === step));
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === step);
-    dot.setAttribute('aria-selected', i === step ? 'true' : 'false');
-    dot.setAttribute('aria-label',    `Go to step ${i + 1} of ${totalSteps}`);
-  });
-
-  currentStep = step;
-  updateProgressBar(step, totalSteps);
-  updateButtonAccent(modal, step);
-
-  if (step === 1) {
-    const demo = modal.querySelector('.ob-search-demo');
-    if (demo) {
-      demo.style.animation = 'none';
-      void demo.offsetWidth;
-      demo.style.animation = '';
-      modal.querySelectorAll('.ob-result').forEach(el => {
-        el.style.animation = 'none';
-        void el.offsetWidth;
-        el.style.animation = '';
-      });
-    }
-  }
-
-  modal.setAttribute(
-    'aria-label',
-    `Tour step ${step + 1} of ${totalSteps}: ${
-      modal.querySelector(`.onboarding-step[data-step="${step}"] h2`)?.textContent || ''
-    }`
-  );
-}
-
-function nextStep() {
-  if (currentStep < totalSteps - 1) {
-    showStep(currentStep + 1);
-  } else {
-    closeOnboarding();
-  }
-}
-
-function prevStep() {
-  if (currentStep > 0) showStep(currentStep - 1);
-}
-
-function createOnboardingDots(modal) {
-  modal.querySelectorAll('.onboarding-dots').forEach(container => {
-    container.innerHTML = '';
-    container.setAttribute('role',       'tablist');
-    container.setAttribute('aria-label', 'Tour steps');
-
-    for (let i = 0; i < totalSteps; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'onboarding-dot' + (i === currentStep ? ' active' : '');
-      dot.setAttribute('role',          'tab');
-      dot.setAttribute('tabindex',      i === currentStep ? '0' : '-1');
-      dot.setAttribute('aria-selected', i === currentStep ? 'true' : 'false');
-      dot.setAttribute('aria-label',    `Step ${i + 1} of ${totalSteps}`);
-
-      dot.addEventListener('click', () => showStep(i));
-      dot.addEventListener('keydown', e => {
-        if (e.key === 'ArrowRight') { e.preventDefault(); showStep(Math.min(i + 1, totalSteps - 1)); }
-        if (e.key === 'ArrowLeft')  { e.preventDefault(); showStep(Math.max(i - 1, 0)); }
-      });
-
-      container.appendChild(dot);
-    }
-  });
-}
-
-function bindOnboardingEvents() {
-  const modal = document.getElementById('onboarding-modal');
-  if (!modal) return;
-
-  document.getElementById('onboarding-close')?.addEventListener('click', closeOnboarding);
-  document.getElementById('onboarding-done')?.addEventListener('click',  closeOnboarding);
-
-  modal.querySelectorAll('[data-next]').forEach(btn => btn.addEventListener('click', nextStep));
-  modal.querySelectorAll('[data-prev]').forEach(btn => btn.addEventListener('click', prevStep));
-
-  modal.addEventListener('click', e => { if (e.target === modal) closeOnboarding(); });
-  modal.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeOnboarding(); } });
-
-  document.getElementById('btn-tour')?.addEventListener('click', () => {
-    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    openOnboarding();
-  });
-}
-
-function initOnboarding() {
-  if (!localStorage.getItem(ONBOARDING_STORAGE_KEY)) {
-    openOnboarding();
-  }
-}
-
-let onboardingInitialized = false;
-
-function tryInitOnboarding() {
-  if (onboardingInitialized) return;
-  if (!document.getElementById('onboarding-modal')) return;
-  onboardingInitialized = true;
-  bindOnboardingEvents();
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', tryInitOnboarding);
-} else {
-  tryInitOnboarding();
-}
-
-// Triggered by main.js after the GeoJSON map finishes loading.
-window.addEventListener('mapready', initOnboarding,     { once: true });
-window.addEventListener('mapready', setDailyHighlight,  { once: true });
-
-// Fallback: if mapready never fires, initialise after 1.5s.
+// Fallback if mapready never fires
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    if (!onboardingInitialized) return;
-    if (!localStorage.getItem(ONBOARDING_STORAGE_KEY)) openOnboarding();
-    setDailyHighlight();
+    if (!document.getElementById('ph-highlight-text')?.textContent) {
+      setDailyHighlight();
+    }
   }, 1500);
 }, { once: true });
