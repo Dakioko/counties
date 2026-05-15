@@ -879,7 +879,7 @@ function resetHome() {
   url.searchParams.delete('county');
   history.replaceState(null, '', url.toString());
 
-  if (isMobile()) setSheet('peek');
+  if (isMobile()) setSheet('mid');
 
   setDailyHighlight();
 }
@@ -899,4 +899,49 @@ document.addEventListener('DOMContentLoaded', () => {
       setDailyHighlight();
     }
   }, 1500);
+}, { once: true });
+
+// Add to ui.js - Populate county highlights
+function populateCountyHighlights() {
+  const statsGrid = document.getElementById('ph-stats-grid');
+  if (!statsGrid) return;
+
+  const counties = Object.entries(countiesData).map(([name, data]) => ({ name, ...data }));
+
+  // Strip commas before parsing
+  const parseNum = s => parseFloat((s || '0').replace(/,/g, '')) || 0;
+
+  const largestPop  = [...counties].sort((a, b) => b.popM - a.popM)[0];
+  const largestArea = [...counties].sort((a, b) => parseNum(b.area) - parseNum(a.area))[0];
+  const highestGcp  = [...counties].sort((a, b) => parseGcpValue(b.gcp) - parseGcpValue(a.gcp))[0];
+  const densest     = [...counties].sort((a, b) => {
+    const densA = a.popM * 1_000_000 / parseNum(a.area);
+    const densB = b.popM * 1_000_000 / parseNum(b.area);
+    return densB - densA;
+  })[0];
+
+  statsGrid.innerHTML = `
+    <div class="ph-stat-item">
+      <span class="ph-stat-item-label">Largest Population</span>
+      <span class="ph-stat-item-value highlight">${largestPop.name} (${largestPop.pop})</span>
+    </div>
+    <div class="ph-stat-item">
+      <span class="ph-stat-item-label">Largest Area</span>
+      <span class="ph-stat-item-value highlight">${largestArea.name} (${largestArea.area} km²)</span>
+    </div>
+    <div class="ph-stat-item">
+      <span class="ph-stat-item-label">Highest GCP</span>
+      <span class="ph-stat-item-value highlight">${highestGcp.name} (${highestGcp.gcp})</span>
+    </div>
+    <div class="ph-stat-item">
+      <span class="ph-stat-item-label">Most Dense</span>
+      <span class="ph-stat-item-value highlight">${densest.name}</span>
+    </div>
+  `;
+}
+
+// Call this when the page is ready - add to your existing mapready event listener
+window.addEventListener('mapready', () => {
+  setDailyHighlight();
+  populateCountyHighlights(); // Add this line
 }, { once: true });
