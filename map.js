@@ -38,7 +38,8 @@ function updateMapSize() {
   const w = mapWrap.offsetWidth;
   const h = mapWrap.offsetHeight;
   projection.translate([w / 2, h / 2]);
-  projection.scale(h * (w < 480 ? 2.8 : w < 768 ? 3.2 : w < 1024 ? 3.8 : 4.5));
+  /*projection.scale(h * (w < 480 ? 2.8 : w < 768 ? 3.2 : w < 1024 ? 3.8 : 4.5));*/
+  projection.scale(h * (w < 480 ? 3.2 : w < 768 ? 3.8 : w < 1024 ? 5.0 : 6.0));
 }
 updateMapSize();
 

@@ -766,37 +766,6 @@ body {
   border-radius: 99px;
 }
 
-/* PLACEHOLDER */
-#placeholder {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 32px;
-  text-align: center;
-  gap: 50px;
-}
-/* Ensure [hidden] fully removes placeholder from layout —
-   flex container overrides the browser's default display:none for [hidden] */
-#placeholder[hidden] {
-  display: none !important;
-}
-.ph-circle {
-  width: 74px; height: 74px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
-}
-.ph-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--border); }
-#placeholder h3 { font-size: 16px; font-weight: 700; color: var(--text); font-family: 'Outfit', sans-serif; }
-#placeholder p  { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 280px; }
-.ph-stats     { display: flex; gap: 16px; margin-top: 12px; }
-.ph-stat      { text-align: center; }
-.ph-stat-val  { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
-.ph-stat-label{ font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Plus Jakarta Sans', sans-serif; }
 
 /* COUNTY PANEL */
 #county-panel {
@@ -1240,7 +1209,7 @@ body {
   #top-nav { padding: 0 14px; }
   .nav-center    { display: none; }
   .mob-search-btn { display: flex; }
-  .btn-label     { display: none; }
+  /* .btn-label     { display: none; } */
   .nav-icon-btn  { padding: 6px 8px; }
 
   /* Full-screen map */
@@ -1908,4 +1877,327 @@ body {
   }
 
   .ob-search-demo { width: 88%; }
+}
+#placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+#placeholder[hidden] {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PLACEHOLDER v2 — Editorial welcome panel
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Dot grid texture */
+.ph-dotgrid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Inner layout */
+.ph-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 36px;
+  gap: 0;
+}
+
+/* ── Entrance animations ── */
+.ph-anim {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: phFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes phFadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ph-anim--1  { animation-delay: 0.05s; }
+.ph-anim--2  { animation-delay: 0.12s; }
+.ph-anim--3  { animation-delay: 0.22s; }
+.ph-anim--4  { animation-delay: 0.32s; }
+.ph-anim--5  { animation-delay: 0.42s; }
+.ph-anim--6  { animation-delay: 0.50s; }
+.ph-anim--7  { animation-delay: 0.58s; }
+.ph-anim--8  { animation-delay: 0.66s; }
+.ph-anim--9  { animation-delay: 0.74s; }
+.ph-anim--10 { animation-delay: 0.82s; }
+
+/* ── Eyebrow ── */
+.ph-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.ph-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green-dark);
+  flex-shrink: 0;
+  animation: phPulseDot 2.5s ease-in-out infinite;
+}
+
+@keyframes phPulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+
+/* ── Headline ── */
+.ph-headline {
+  font-family: 'Outfit', sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -2px;
+  color: var(--text);
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  align-items: baseline;
+}
+
+.ph-word {
+  display: inline-block;
+}
+
+.ph-word:last-child {
+  color: var(--accent);
+}
+
+/* ── Rule ── */
+.ph-rule {
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 99px;
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+
+/* ── Description ── */
+.ph-desc {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--muted);
+  font-weight: 300;
+  max-width: 700px;
+  margin-bottom: 28px;
+}
+
+/*How to use strip*/
+/* ── How-to 2×2 grid ── */
+.ph-how-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ph-how-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  cursor: default;
+}
+
+.ph-how-card:hover {
+  border-color: var(--accent-line);
+  box-shadow: 0 4px 16px rgba(30,74,138,0.08);
+  transform: translateY(-2px);
+}
+
+/* First card gets a subtle accent tint — the primary action */
+.ph-how-card--primary {
+  border-color: var(--accent-line);
+  background: var(--accent-light);
+}
+
+.ph-how-card--primary .ph-how-card-icon {
+  background: var(--accent);
+  color: white;
+}
+
+.ph-how-card--primary .ph-how-card-label {
+  color: var(--accent);
+}
+
+.ph-how-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ph-how-card:not(.ph-how-card--primary):hover .ph-how-card-icon {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.ph-how-card-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.1px;
+}
+
+.ph-how-card-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+.ph-how-card-desc kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+}
+
+/* ── Mobile — stack to single column ── */
+@media (max-width: 768px) {
+  .ph-how-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ph-how-card {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .ph-how-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .ph-how-card-label { font-size: 12px; }
+  .ph-how-card-desc  { font-size: 11px; }
+}
+/*End of How to use strip*/
+
+/* ── Daily highlight ── */
+.ph-highlight {
+  background: var(--accent-light);
+  border: 1px solid var(--accent-line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.ph-highlight-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ph-highlight-text {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+
+
+/* ── Sources ── */
+.ph-sources {
+  font-size: 11px;
+  color: var(--muted-light);
+  line-height: 1.5;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  .ph-dotgrid { opacity: 0.3; }
+  .ph-highlight { background: rgba(74,125,212,0.08); }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ph-anim {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .ph-pulse-dot,
+  .ph-cta-dot {
+    animation: none;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .ph-inner {
+    padding: 28px 20px;
+    justify-content: flex-start;
+  }
+  .ph-headline {
+    font-size: 38px;
+    letter-spacing: -1.5px;
+  }
+  .ph-how {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .ph-how-item {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 10px;
+  }
 }

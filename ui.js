@@ -55,8 +55,6 @@ const els = {
   btnShare:          document.getElementById('btn-share'),
   btnCsv:            document.getElementById('btn-csv'),
   sidebar:           document.getElementById('sidebar'),
-  mobPanelBtn:       document.getElementById('mob-panel-btn'),
-  mobPanelBtnLabel:  document.getElementById('mob-panel-btn-label'),
   sheetHandle:       document.getElementById('sheet-handle'),
   sheetExpandBtn:    document.getElementById('sheet-expand-btn'),
   compareBar:        document.getElementById('compare-bar'),
@@ -124,7 +122,6 @@ export function showToast(msg) {
 }
 
 // ── FOCUS TRAP ──────────────────────────────────────────────────────────────
-// Used by openCmd() and openAbout() — simple two-argument version.
 function createFocusTrap(el) {
   function handler(e) {
     if (e.key !== 'Tab') return;
@@ -169,9 +166,9 @@ els.sheetExpandBtn?.addEventListener('click', () => {
   }
 });
 
-let dragStartY = 0;
+let dragStartY     = 0;
 let dragStartState = 'peek';
-let isDragging = false;
+let isDragging     = false;
 
 function sheetStateY(state) {
   const sheetH = els.sidebar.offsetHeight;
@@ -192,12 +189,13 @@ els.sheetHandle?.addEventListener('touchstart', e => {
 
 els.sheetHandle?.addEventListener('touchmove', e => {
   if (!isDragging) return;
-  const deltaY   = e.touches[0].clientY - dragStartY;
-  const baseY    = sheetStateY(dragStartState);
-  const sheetH   = els.sidebar.offsetHeight;
-  const minY     = 0;
-  const maxY     = sheetH - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek'), 10) || 200);
-  const newY     = Math.min(maxY, Math.max(minY, baseY + deltaY));
+  const deltaY = e.touches[0].clientY - dragStartY;
+  const baseY  = sheetStateY(dragStartState);
+  const sheetH = els.sidebar.offsetHeight;
+  const peekH  = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek'), 10) || 200;
+  const minY   = 0;
+  const maxY   = sheetH - peekH;
+  const newY   = Math.min(maxY, Math.max(minY, baseY + deltaY));
   els.sidebar.style.transform = `translateY(${newY}px)`;
 }, { passive: true });
 
@@ -225,6 +223,39 @@ els.sheetHandle?.addEventListener('touchend', e => {
     setSheet(dragStartState);
   }
 }, { passive: true });
+
+// ── DAILY HIGHLIGHT ──────────────────────────────────────────────────────────
+const HIGHLIGHTS = [
+  "Nairobi is the only capital city in the world with a national park within its boundaries.",
+  "Lake Turkana is the world's largest permanent desert lake, stretching 290km from north to south.",
+  "Lamu Old Town has been continuously inhabited for over 700 years and is a UNESCO World Heritage Site.",
+  "Meru County produces over 90% of Kenya's miraa (khat), air-freighted daily to Somalia and beyond.",
+  "The Great Wildebeest Migration through Narok's Maasai Mara is considered the greatest wildlife show on earth.",
+  "Kisii soapstone, found only in Kisii County, is hand-carved into sculptures sold on five continents.",
+  "Iten in Elgeyo Marakwet has produced more Olympic marathon medals than most countries combined.",
+  "Fort Jesus in Mombasa, built by the Portuguese in 1593, changed hands nine times across colonial powers.",
+  "Laikipia has more black rhinos than any place outside a national park in Africa.",
+  "Kakamega Forest is East Africa's last remaining fragment of the ancient Congo Basin rainforest.",
+  "Nyandarua supplies roughly 40% of Kenya's total potato production.",
+  "Barack Obama's father was born in Kogelo village, Siaya County.",
+  "Cars are almost entirely banned on Lamu Island — donkeys and boats are the primary modes of transport.",
+  "The Busia border crossing handles over 700 trucks daily, making it East Africa's busiest land border.",
+  "Kirinyaga's Mwea Irrigation Scheme produces over 80% of Kenya's locally grown rice.",
+  "Marsabit's Lake Turkana Wind Power project (310MW) is Africa's largest wind farm.",
+  "The Nandi resisted British colonial advance for over a decade — longer than any other community in sub-Saharan Africa.",
+  "Makueni was the first county in Kenya to implement a universal health care scheme at county level.",
+  "Samburu National Reserve is the only place in Kenya to see all five of the 'Samburu Special' animals.",
+  "Turkana County contains the world's largest known field of fossil hominid remains at Sibiloi National Park.",
+];
+
+function setDailyHighlight() {
+  const el = document.getElementById('ph-highlight-text');
+  if (!el) return;
+  const now      = new Date();
+  const start    = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86_400_000);
+  el.textContent = HIGHLIGHTS[dayOfYear % HIGHLIGHTS.length];
+}
 
 // ── SHOW COUNTY ──────────────────────────────────────────────────────────────
 export function showCounty(data, mapPathEl) {
@@ -263,9 +294,9 @@ export function showCounty(data, mapPathEl) {
   // Economy tab
   els.cGcp.textContent = data.gcp || '—';
 
-  const gcpNum = parseGcpValue(data.gcp);
+  const gcpNum     = parseGcpValue(data.gcp);
   const GCP_MAX_LOG = Math.log(2100 + 1);
-  const gcpPct = gcpNum > 0
+  const gcpPct     = gcpNum > 0
     ? Math.min(100, Math.round((Math.log(gcpNum + 1) / GCP_MAX_LOG) * 100))
     : 0;
   els.cGcpBar.style.width      = gcpPct + '%';
@@ -278,8 +309,8 @@ export function showCounty(data, mapPathEl) {
   );
 
   const TIER_MAP = {
-    high: { cls: 'tier-high', txt: 'High GCP' },
-    mid:  { cls: 'tier-mid',  txt: 'Mid GCP'  },
+    high: { cls: 'tier-high', txt: 'High GCP'   },
+    mid:  { cls: 'tier-mid',  txt: 'Mid GCP'    },
     low:  { cls: 'tier-low',  txt: 'Developing' },
   };
   const tier = TIER_MAP[data.gcpTier] || TIER_MAP.low;
@@ -300,8 +331,8 @@ export function showCounty(data, mapPathEl) {
   // Geography tab
   const geo = data.geo || {};
   const geoFields = [
-    { label: 'Terrain',   val: geo.terrain },
-    { label: 'Climate',   val: geo.climate },
+    { label: 'Terrain',   val: geo.terrain   },
+    { label: 'Climate',   val: geo.climate   },
     { label: 'Elevation', val: geo.elevation },
     { label: 'Borders',   val: geo.neighbours },
   ].filter(f => f.val);
@@ -310,10 +341,10 @@ export function showCounty(data, mapPathEl) {
     const cell = document.createElement('div');
     cell.className = 'geo-cell';
     const dt = document.createElement('dt');
-    dt.className = 'geo-label';
+    dt.className   = 'geo-label';
     dt.textContent = f.label;
     const dd = document.createElement('dd');
-    dd.className = 'geo-val';
+    dd.className   = 'geo-val';
     dd.textContent = f.val;
     cell.append(dt, dd);
     return cell;
@@ -383,14 +414,19 @@ els.btnCsv.addEventListener('click', () => {
   const d = selectedCounty;
   const rows = [
     ['Field', 'Value'],
-    ['County', d.name], ['Code', d.code], ['County HQ', d.cap],
-    ['Population', d.pop], ['Area (km²)', d.area],
+    ['County',                    d.name],
+    ['Code',                      d.code],
+    ['County HQ',                 d.cap],
+    ['Population',                d.pop],
+    ['Area (km²)',                d.area],
     ['Population Density (/km²)', calcDensity(d)],
-    ['Governor', d.governor], ['GCP', d.gcp], ['GCP Tier', d.gcpTier],
-    ['Industries', (d.industries || []).join('; ')],
-    ['Notable Places', (d.landmarks || []).join('; ')],
-    ['Sub-Counties', (d.subcounties || []).join('; ')],
-    ['About', d.known],
+    ['Governor',                  d.governor],
+    ['GCP',                       d.gcp],
+    ['GCP Tier',                  d.gcpTier],
+    ['Industries',                (d.industries  || []).join('; ')],
+    ['Notable Places',            (d.landmarks   || []).join('; ')],
+    ['Sub-Counties',              (d.subcounties || []).join('; ')],
+    ['About',                     d.known],
   ];
   const csv = rows
     .map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
@@ -457,7 +493,7 @@ function countyMatchesQuery(c, q) {
     c.region,
     c.cap,
     c.governor || '',
-    c.known || '',
+    c.known    || '',
     (c.industries || []).join(' '),
     (c.landmarks  || []).join(' '),
   ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, '');
@@ -468,57 +504,57 @@ function countyMatchesQuery(c, q) {
 function renderCmd(term) {
   const q = term.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
   const allCounties = Object.entries(countiesData).map(([name, d]) => ({ name, ...d }));
-  const filtered = allCounties.filter(c => countyMatchesQuery(c, q));
+  const filtered    = allCounties.filter(c => countyMatchesQuery(c, q));
 
   if (!filtered.length) {
     const empty = document.createElement('div');
-    empty.className = 'cmd-empty';
+    empty.className   = 'cmd-empty';
     empty.textContent = 'No counties match your search.';
     els.cmdResults.replaceChildren(empty);
     return;
   }
 
   const labelEl = document.createElement('div');
-  labelEl.className = 'cmd-section-label';
+  labelEl.className   = 'cmd-section-label';
   labelEl.textContent = q
     ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`
     : 'All 47 Counties';
 
   const items = filtered.map(c => {
     const item = document.createElement('div');
-    item.className = 'cmd-item';
-    item.dataset.county = c.name;
-    item.setAttribute('role', 'option');
+    item.className        = 'cmd-item';
+    item.dataset.county   = c.name;
+    item.setAttribute('role',     'option');
     item.setAttribute('tabindex', '0');
 
     const dot = document.createElement('div');
-    dot.className = 'cmd-dot';
+    dot.className        = 'cmd-dot';
     dot.style.background = REGION_COLORS[c.region] || '#cbd5e1';
     dot.setAttribute('aria-hidden', 'true');
 
     const main = document.createElement('div');
-    main.className = 'cmd-main';
+    main.className   = 'cmd-main';
     main.textContent = c.name;
 
     let subText = c.region;
     if (q) {
       const words = q.split(/\s+/).filter(Boolean);
-      const hint = [...(c.industries || []), ...(c.landmarks || [])].find(s =>
+      const hint  = [...(c.industries || []), ...(c.landmarks || [])].find(s =>
         words.some(w => s.toLowerCase().includes(w))
       );
       if (hint) subText = hint;
     }
 
     const sub = document.createElement('div');
-    sub.className = 'cmd-sub';
+    sub.className   = 'cmd-sub';
     sub.textContent = subText;
 
     item.append(dot, main, sub);
 
     const activate = () => {
       if (!countiesData[c.name]) return;
-      const data = { name: c.name, ...countiesData[c.name] };
-      let pathEl = null;
+      const data   = { name: c.name, ...countiesData[c.name] };
+      let pathEl   = null;
       _g?.selectAll('path').each(function(d) {
         if (_findMatch?.(d)?.name === c.name) pathEl = this;
       });
@@ -567,16 +603,16 @@ function updatePinBtn(name) {
   els.btnPinCounty.setAttribute('aria-pressed', String(isPinned));
   els.btnPinCounty.title = atMax ? 'Remove a county to pin another (max 3)' : '';
 
-  const svgNS   = 'http://www.w3.org/2000/svg';
+  const svgNS    = 'http://www.w3.org/2000/svg';
   const starPath = 'M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z';
 
   const svgIcon = document.createElementNS(svgNS, 'svg');
-  svgIcon.setAttribute('width', '11');
-  svgIcon.setAttribute('height', '11');
-  svgIcon.setAttribute('viewBox', '0 0 24 24');
-  svgIcon.setAttribute('aria-hidden', 'true');
-  svgIcon.setAttribute('fill', isPinned ? 'currentColor' : 'none');
-  svgIcon.setAttribute('stroke', 'currentColor');
+  svgIcon.setAttribute('width',        '11');
+  svgIcon.setAttribute('height',       '11');
+  svgIcon.setAttribute('viewBox',      '0 0 24 24');
+  svgIcon.setAttribute('aria-hidden',  'true');
+  svgIcon.setAttribute('fill',         isPinned ? 'currentColor' : 'none');
+  svgIcon.setAttribute('stroke',       'currentColor');
   svgIcon.setAttribute('stroke-width', isPinned ? '0' : '2.5');
   const p = document.createElementNS(svgNS, 'path');
   p.setAttribute('d', starPath);
@@ -626,7 +662,7 @@ function renderCompareBar() {
     slot.className = 'compare-slot filled';
 
     const nameSpan = document.createElement('span');
-    nameSpan.className = 'compare-slot-name';
+    nameSpan.className  = 'compare-slot-name';
     nameSpan.style.color = REGION_COLORS[d.region] || '#2563eb';
     nameSpan.textContent = name;
 
@@ -646,10 +682,10 @@ function renderCompareBar() {
   });
 
   for (let i = pinnedCounties.length; i < 3; i++) {
-    const slot  = document.createElement('div');
+    const slot = document.createElement('div');
     slot.className = 'compare-slot';
-    const hint  = document.createElement('span');
-    hint.className = 'compare-slot-empty';
+    const hint = document.createElement('span');
+    hint.className   = 'compare-slot-empty';
     hint.textContent = `+ Pin a county (${i + 1}/3)`;
     slot.appendChild(hint);
     slotNodes.push(slot);
@@ -677,9 +713,9 @@ function openCompareModal() {
 
   els.compareSubtitle.textContent = counties.map(c => c.name).join(' · ');
 
-  const TIER_LABELS = { high: 'High GCP', mid: 'Mid GCP', low: 'Developing' };
-  const TIER_COLORS = { high: '#166534', mid: '#854d0e', low: '#475569' };
-  const TIER_BG     = { high: '#dcfce7', mid: '#fef9c3', low: '#f1f5f9' };
+  const TIER_LABELS = { high: 'High GCP',   mid: 'Mid GCP',  low: 'Developing' };
+  const TIER_COLORS = { high: '#166534',     mid: '#854d0e',  low: '#475569'    };
+  const TIER_BG     = { high: '#dcfce7',     mid: '#fef9c3',  low: '#f1f5f9'    };
 
   const cards = counties.map(c => {
     const color = REGION_COLORS[c.region] || '#2563eb';
@@ -689,17 +725,17 @@ function openCompareModal() {
     card.className = 'cmp-card';
 
     const band = document.createElement('div');
-    band.className = 'cmp-card-band';
+    band.className        = 'cmp-card-band';
     band.style.background = color;
     band.setAttribute('aria-hidden', 'true');
 
     const titleRow = document.createElement('div');
     titleRow.className = 'cmp-card-title-row';
     const nameEl = document.createElement('div');
-    nameEl.className = 'cmp-card-name';
+    nameEl.className   = 'cmp-card-name';
     nameEl.textContent = c.name;
     const hqEl = document.createElement('div');
-    hqEl.className = 'cmp-card-hq';
+    hqEl.className   = 'cmp-card-hq';
     hqEl.textContent = `HQ: ${c.cap} · No. ${c.code}`;
     titleRow.append(nameEl, hqEl);
 
@@ -709,17 +745,17 @@ function openCompareModal() {
 
     const bigStats = [
       { label: 'Population',   val: c.pop,         accent: true },
-      { label: 'GCP (est.)',   val: c.gcp },
-      { label: 'Area km²',     val: c.area },
-      { label: 'Density /km²', val: calcDensity(c) },
+      { label: 'GCP (est.)',   val: c.gcp                       },
+      { label: 'Area km²',     val: c.area                      },
+      { label: 'Density /km²', val: calcDensity(c)              },
     ].map(({ label, val, accent }) => {
       const cell = document.createElement('div');
       cell.className = 'cmp-big-cell' + (accent ? ' accent' : '');
       const lbl = document.createElement('div');
-      lbl.className = 'cmp-big-label';
+      lbl.className   = 'cmp-big-label';
       lbl.textContent = label;
       const v = document.createElement('div');
-      v.className = 'cmp-big-val' + (accent ? ' accent' : '');
+      v.className   = 'cmp-big-val' + (accent ? ' accent' : '');
       v.textContent = val || '—';
       cell.append(lbl, v);
       return cell;
@@ -731,12 +767,13 @@ function openCompareModal() {
     const tierRow = document.createElement('div');
     tierRow.className = 'cmp-fact-row';
     const tierLbl = document.createElement('span');
-    tierLbl.className = 'cmp-fact-label';
+    tierLbl.className   = 'cmp-fact-label';
     tierLbl.textContent = 'GCP tier';
     const tierBadge = document.createElement('span');
     Object.assign(tierBadge.style, {
-      background: TIER_BG[c.gcpTier], color: TIER_COLORS[c.gcpTier],
-      padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '700',
+      background: TIER_BG[c.gcpTier],    color: TIER_COLORS[c.gcpTier],
+      padding: '2px 8px',                borderRadius: '4px',
+      fontSize: '11px',                  fontWeight: '700',
     });
     tierBadge.textContent = TIER_LABELS[c.gcpTier] || '—';
     const tierVal = document.createElement('span');
@@ -749,18 +786,18 @@ function openCompareModal() {
     facts.appendChild(tierRow);
 
     [
-      { label: '% of Kenya pop.', val: pct + '%' },
+      { label: '% of Kenya pop.', val: pct + '%'                         },
       { label: 'Sub-counties',    val: String(c.subcounties?.length ?? '—') },
-      { label: 'Climate',         val: c.geo?.climate   || '—' },
-      { label: 'Elevation',       val: c.geo?.elevation || '—' },
+      { label: 'Climate',         val: c.geo?.climate    || '—'          },
+      { label: 'Elevation',       val: c.geo?.elevation  || '—'          },
     ].forEach(({ label, val }) => {
       const row = document.createElement('div');
       row.className = 'cmp-fact-row';
       const l = document.createElement('span');
-      l.className = 'cmp-fact-label';
+      l.className   = 'cmp-fact-label';
       l.textContent = label;
       const v = document.createElement('span');
-      v.className = 'cmp-fact-val';
+      v.className   = 'cmp-fact-val';
       v.textContent = val;
       row.append(l, v);
       facts.appendChild(row);
@@ -769,13 +806,13 @@ function openCompareModal() {
     const chipSection = document.createElement('div');
     chipSection.className = 'cmp-chip-section';
     const chipLabel = document.createElement('div');
-    chipLabel.className = 'cmp-chip-label';
+    chipLabel.className   = 'cmp-chip-label';
     chipLabel.textContent = 'Key Industries';
     const chips = document.createElement('div');
     chips.className = 'cmp-chips';
     (c.industries || []).forEach(ind => {
       const chip = document.createElement('span');
-      chip.className = 'cmp-chip';
+      chip.className   = 'cmp-chip';
       chip.textContent = ind;
       chips.appendChild(chip);
     });
@@ -784,10 +821,13 @@ function openCompareModal() {
     const gov = document.createElement('div');
     gov.className = 'cmp-governor';
     const govSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    govSvg.setAttribute('width', '12'); govSvg.setAttribute('height', '12');
-    govSvg.setAttribute('viewBox', '0 0 24 24'); govSvg.setAttribute('fill', 'none');
-    govSvg.setAttribute('stroke', 'currentColor'); govSvg.setAttribute('stroke-width', '2');
-    govSvg.setAttribute('aria-hidden', 'true');
+    govSvg.setAttribute('width',        '12');
+    govSvg.setAttribute('height',       '12');
+    govSvg.setAttribute('viewBox',      '0 0 24 24');
+    govSvg.setAttribute('fill',         'none');
+    govSvg.setAttribute('stroke',       'currentColor');
+    govSvg.setAttribute('stroke-width', '2');
+    govSvg.setAttribute('aria-hidden',  'true');
     govSvg.innerHTML = '<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>';
     const govStrong = document.createElement('strong');
     govStrong.textContent = c.governor || '—';
@@ -831,6 +871,8 @@ function resetHome() {
   history.replaceState(null, '', url.toString());
 
   if (isMobile()) setSheet('peek');
+
+  setDailyHighlight();
 }
 
 els.brand.addEventListener('click', resetHome);
@@ -839,24 +881,18 @@ els.brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 
 // ══════════════════════════════════════════════════════════════════════════════
 // ONBOARDING SYSTEM
 // ══════════════════════════════════════════════════════════════════════════════
-// FIX: The original code redefined createFocusTrap() a second time inside the
-// onboarding section. ES modules run in strict mode, where duplicate function
-// declarations in the same scope are a SyntaxError — crashing the entire
-// module before any code executes. The onboarding version is now named
-// createModalFocusTrap() and its one call site inside openOnboarding() is
-// updated to match.
-// ══════════════════════════════════════════════════════════════════════════════
 
 const ONBOARDING_STORAGE_KEY = 'kenya_county_onboarding_seen';
 
-let currentStep = 0;
-let totalSteps  = 0;
+let currentStep                = 0;
+let totalSteps                 = 0;
 let onboardingFocusTrapHandler = null;
 
 /**
  * createModalFocusTrap(container, selector?)
  * Generic focus trap used exclusively by the onboarding modal.
- * Renamed from createFocusTrap to avoid the duplicate-declaration SyntaxError.
+ * Renamed from createFocusTrap to avoid a duplicate-declaration SyntaxError
+ * in strict-mode ES modules.
  */
 function createModalFocusTrap(container, selector) {
   const SEL = selector || [
@@ -884,7 +920,6 @@ function createModalFocusTrap(container, selector) {
   };
 }
 
-// Step accent colours
 const STEP_ACCENTS = ['#1e4a8a', '#0d7a55', '#b45309'];
 
 function updateProgressBar(step, total) {
@@ -917,7 +952,6 @@ function openOnboarding() {
   showStep(0);
   createOnboardingDots(modal);
 
-  // ── FIX: use createModalFocusTrap (not the now-removed duplicate) ──
   if (onboardingFocusTrapHandler) {
     modal.removeEventListener('keydown', onboardingFocusTrapHandler);
   }
@@ -957,11 +991,10 @@ function showStep(step) {
   const dots  = modal.querySelectorAll('.onboarding-dot');
 
   steps.forEach((s, i) => s.classList.toggle('active', i === step));
-
   dots.forEach((dot, i) => {
     dot.classList.toggle('active', i === step);
     dot.setAttribute('aria-selected', i === step ? 'true' : 'false');
-    dot.setAttribute('aria-label', `Go to step ${i + 1} of ${totalSteps}`);
+    dot.setAttribute('aria-label',    `Go to step ${i + 1} of ${totalSteps}`);
   });
 
   currentStep = step;
@@ -999,27 +1032,24 @@ function nextStep() {
 }
 
 function prevStep() {
-  if (currentStep > 0) {
-    showStep(currentStep - 1);
-  }
+  if (currentStep > 0) showStep(currentStep - 1);
 }
 
 function createOnboardingDots(modal) {
   modal.querySelectorAll('.onboarding-dots').forEach(container => {
     container.innerHTML = '';
-    container.setAttribute('role', 'tablist');
+    container.setAttribute('role',       'tablist');
     container.setAttribute('aria-label', 'Tour steps');
 
     for (let i = 0; i < totalSteps; i++) {
       const dot = document.createElement('div');
-      dot.className          = 'onboarding-dot' + (i === currentStep ? ' active' : '');
+      dot.className = 'onboarding-dot' + (i === currentStep ? ' active' : '');
       dot.setAttribute('role',          'tab');
       dot.setAttribute('tabindex',      i === currentStep ? '0' : '-1');
       dot.setAttribute('aria-selected', i === currentStep ? 'true' : 'false');
       dot.setAttribute('aria-label',    `Step ${i + 1} of ${totalSteps}`);
 
       dot.addEventListener('click', () => showStep(i));
-
       dot.addEventListener('keydown', e => {
         if (e.key === 'ArrowRight') { e.preventDefault(); showStep(Math.min(i + 1, totalSteps - 1)); }
         if (e.key === 'ArrowLeft')  { e.preventDefault(); showStep(Math.max(i - 1, 0)); }
@@ -1035,22 +1065,13 @@ function bindOnboardingEvents() {
   if (!modal) return;
 
   document.getElementById('onboarding-close')?.addEventListener('click', closeOnboarding);
-  document.getElementById('onboarding-done')?.addEventListener('click', closeOnboarding);
+  document.getElementById('onboarding-done')?.addEventListener('click',  closeOnboarding);
 
-  modal.querySelectorAll('[data-next]').forEach(btn =>
-    btn.addEventListener('click', nextStep)
-  );
-  modal.querySelectorAll('[data-prev]').forEach(btn =>
-    btn.addEventListener('click', prevStep)
-  );
+  modal.querySelectorAll('[data-next]').forEach(btn => btn.addEventListener('click', nextStep));
+  modal.querySelectorAll('[data-prev]').forEach(btn => btn.addEventListener('click', prevStep));
 
-  modal.addEventListener('click', e => {
-    if (e.target === modal) closeOnboarding();
-  });
-
-  modal.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { e.stopPropagation(); closeOnboarding(); }
-  });
+  modal.addEventListener('click', e => { if (e.target === modal) closeOnboarding(); });
+  modal.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeOnboarding(); } });
 
   document.getElementById('btn-tour')?.addEventListener('click', () => {
     localStorage.removeItem(ONBOARDING_STORAGE_KEY);
@@ -1069,7 +1090,6 @@ let onboardingInitialized = false;
 function tryInitOnboarding() {
   if (onboardingInitialized) return;
   if (!document.getElementById('onboarding-modal')) return;
-
   onboardingInitialized = true;
   bindOnboardingEvents();
 }
@@ -1081,14 +1101,14 @@ if (document.readyState === 'loading') {
 }
 
 // Triggered by main.js after the GeoJSON map finishes loading.
-window.addEventListener('mapready', initOnboarding, { once: true });
+window.addEventListener('mapready', initOnboarding,     { once: true });
+window.addEventListener('mapready', setDailyHighlight,  { once: true });
 
-// Fallback: if mapready never fires, open onboarding after 1.5s.
+// Fallback: if mapready never fires, initialise after 1.5s.
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (!onboardingInitialized) return;
-    if (!localStorage.getItem(ONBOARDING_STORAGE_KEY)) {
-      openOnboarding();
-    }
+    if (!localStorage.getItem(ONBOARDING_STORAGE_KEY)) openOnboarding();
+    setDailyHighlight();
   }, 1500);
 }, { once: true });

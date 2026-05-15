@@ -49,11 +49,11 @@
   </div>
   <div class="nav-right">
     <button class="nav-icon-btn" id="btn-tour" aria-label="Show tour">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-      </svg>
-      <span class="btn-label">Tour</span>
-    </button>
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+    <polygon points="5 3 19 12 5 21 5 3"/>
+  </svg>
+  <span class="btn-label">Tour</span>
+</button>
     <button class="nav-icon-btn" id="btn-about" aria-label="About this explorer" aria-haspopup="dialog">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
       <span class="btn-label">About</span>
@@ -191,15 +191,99 @@
       </button>
     </div>
 
+    <!--PLACEHOLDER-->
     <div id="placeholder" aria-live="polite">
-      <h3>Explore Kenya</h3>
-      <p>Click any county on the map to explore its data, economy, and sub-counties.</p>
-      <div class="ph-circle" aria-hidden="true"><div class="ph-dot"></div></div>
-      <div class="ph-stats" aria-label="Quick facts">
-        <div class="ph-stat"><div class="ph-stat-val">47</div><div class="ph-stat-label">Counties</div></div>
-        <div class="ph-stat"><div class="ph-stat-val">55M</div><div class="ph-stat-label">Est. Population</div></div>
-      </div>
+
+  <!-- Dot grid background -->
+  <div class="ph-dotgrid" aria-hidden="true"></div>
+
+  <!-- Main content -->
+  <div class="ph-inner">
+
+    <!-- Eyebrow -->
+    <div class="ph-eyebrow ph-anim ph-anim--1">
+      <span class="ph-pulse-dot" aria-hidden="true"></span>
+      Interactive Data Atlas
     </div>
+
+    <!-- Headline -->
+    <h2 class="ph-headline" aria-label="Kenya, county by county.">
+      <span class="ph-word ph-anim ph-anim--2">Kenya,</span>
+      <span class="ph-word ph-anim ph-anim--3">county</span>
+      <span class="ph-word ph-anim ph-anim--4">by county.</span>
+    </h2>
+
+    <!-- Rule -->
+    <div class="ph-rule ph-anim ph-anim--5" aria-hidden="true"></div>
+
+    <!-- Description -->
+    <p class="ph-desc ph-anim ph-anim--6">
+      A comprehensive data explorer covering all 47 counties established
+      under Kenya's 2010 Constitution — population, economic profiles,
+      geography, and sub-county breakdowns, colour-coded by region.
+    </p>
+<!-- How to use — 2x2 grid -->
+<div class="ph-how-grid ph-anim ph-anim--7" role="list" aria-label="How to use">
+
+  <div class="ph-how-card ph-how-card--primary" role="listitem">
+    <div class="ph-how-card-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    </div>
+    <div class="ph-how-card-label">Click a County</div>
+    <div class="ph-how-card-desc">Click any county on the map to explore its data, economy, and sub-counties.</div>
+  </div>
+
+  <div class="ph-how-card" role="listitem">
+    <div class="ph-how-card-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+    </div>
+    <div class="ph-how-card-label">Search</div>
+    <div class="ph-how-card-desc">Find any county by name, region, governor, or industry. Press <kbd>Ctrl+K</kbd> from anywhere.</div>
+  </div>
+
+  <div class="ph-how-card" role="listitem">
+    <div class="ph-how-card-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    </div>
+    <div class="ph-how-card-label">Compare</div>
+    <div class="ph-how-card-desc">Pin up to 3 counties and view population, economy, and key facts side by side.</div>
+  </div>
+
+  <div class="ph-how-card" role="listitem">
+    <div class="ph-how-card-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <div class="ph-how-card-label">Export CSV</div>
+    <div class="ph-how-card-desc">Download any county's full data as a CSV file, or copy a direct share link.</div>
+  </div>
+
+</div>
+
+    <!-- Daily highlight -->
+    <div class="ph-highlight ph-anim ph-anim--8" aria-live="polite">
+      <span class="ph-highlight-label" aria-hidden="true">Did you know</span>
+      <p class="ph-highlight-text" id="ph-highlight-text"></p>
+    </div>
+   <!-- Sources -->
+    <div class="ph-sources ph-anim ph-anim--10">
+      Data: KNBS 2019 Census &nbsp;·&nbsp; CRA &nbsp;·&nbsp; CIDP 2023–27
+    </div>
+
+  </div>
+</div>
+    <!--END oF PLACEHOLDER-->
 
     <div id="county-panel" aria-live="polite" aria-atomic="false">
       <div class="county-hero">
