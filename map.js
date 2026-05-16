@@ -153,26 +153,38 @@ async function fetchGeoJSON() {
   return data;
 }
 
+// ── SPINNER HELPERS ────────────────────────────────────────────────────────────
+function showSpinner() {
+  const el = document.createElement('div');
+  el.className = 'map-spinner';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-label', 'Loading map');
+  el.innerHTML = '<div class="map-spinner-ring" aria-hidden="true"></div>'
+               + '<div class="map-spinner-label" aria-hidden="true">Loading map…</div>';
+  mapWrap.appendChild(el);
+  return el;
+}
+
+function removeSpinner(el) {
+  el?.remove();
+}
+
 // ── INITMAP — entry point called by main.js ───────────────────────────────
 /**
  * initMap(onCountyClick)
  * Fetches GeoJSON, renders county paths, and calls onCountyClick(countyData, pathEl)
  * when a county is activated. Also handles deep-link on load.
  *
- * FIX: added `return` before fetchGeoJSON() so the promise chain is returned
- * to main.js, allowing it to call .then() to dispatch the 'mapready' event.
- * Without this return, initMap() returned undefined and main.js crashed with
- * "Cannot read properties of undefined (reading 'then')".
- *
  * @param {(data: object, el: SVGPathElement|null) => void} onCountyClick
  */
 export function initMap(onCountyClick) {
   mapWrap.classList.add('loading');
+  const spinner = showSpinner();
 
-  // ── FIX: `return` was missing here ───────────────────────────────────────
   return fetchGeoJSON()
     .then(geoData => {
       mapWrap.classList.remove('loading');
+      removeSpinner(spinner);
       buildMatchCache(geoData.features);
       renderPaths(geoData.features, onCountyClick);
       handleDeepLink(onCountyClick);
@@ -180,7 +192,8 @@ export function initMap(onCountyClick) {
     .catch(err => {
       console.error('[map] GeoJSON fetch failed:', err);
       mapWrap.classList.remove('loading');
-      showMapError(() => initMap(onCountyClick)); // retry passes same callback
+      removeSpinner(spinner);
+      showMapError(() => initMap(onCountyClick));
     });
 }
 

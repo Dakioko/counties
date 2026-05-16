@@ -141,13 +141,48 @@ function createFocusTrap(el) {
 // ── MOBILE SHEET ─────────────────────────────────────────────────────────────
 let sheetState = 'hidden';
 
-function setSheet(state) {
+// ── Backdrop element (tap to collapse sheet) ──────────────────────────────────
+const sheetBackdrop = document.createElement('div');
+sheetBackdrop.id = 'sheet-backdrop';
+sheetBackdrop.setAttribute('aria-hidden', 'true');
+document.getElementById('main')?.appendChild(sheetBackdrop);
+
+sheetBackdrop.addEventListener('click', () => {
+  if (sheetState === 'open') setSheet('mid');
+  else if (sheetState === 'mid') setSheet('peek');
+});
+
+function updateBackdrop(state) {
+  // Show backdrop only when sheet is mid or open so map is partially/fully covered
+  sheetBackdrop.classList.toggle('visible', state === 'open' || state === 'mid');
+  // Stronger opacity when fully open
+  sheetBackdrop.classList.toggle('full', state === 'open');
+}
+
+function setSheet(state, animate = true) {
+  // Clear any in-progress inline transform so CSS transition takes over cleanly
+  els.sidebar.style.transition = '';
+  els.sidebar.style.transform  = '';
+
   sheetState = state;
   els.sidebar.classList.remove('sheet-peek', 'sheet-mid', 'sheet-open');
   if (state !== 'hidden') els.sidebar.classList.add(`sheet-${state}`);
+  updateBackdrop(state);
 }
 
-if (isMobile()) setSheet('peek');
+// On first mobile load: start at peek, then after a short delay bounce to hint
+// that the sheet is draggable
+if (isMobile()) {
+  setSheet('peek');
+  setTimeout(() => {
+    if (sheetState === 'peek') {
+      els.sidebar.classList.add('sheet-bounce-hint');
+      els.sidebar.addEventListener('animationend', () => {
+        els.sidebar.classList.remove('sheet-bounce-hint');
+      }, { once: true });
+    }
+  }, 1200);
+}
 
 function setMobBtnVisible(_visible) {}
 
@@ -161,9 +196,30 @@ els.sheetExpandBtn?.addEventListener('click', () => {
   }
 });
 
-let dragStartY     = 0;
-let dragStartState = 'peek';
-let isDragging     = false;
+// ── Peek teaser: show county name (or placeholder title) in the handle strip ──
+function updatePeekTeaser(countyName) {
+  let teaser = document.getElementById('sheet-peek-teaser');
+  if (!teaser) {
+    teaser = document.createElement('div');
+    teaser.id = 'sheet-peek-teaser';
+    teaser.setAttribute('aria-hidden', 'true');
+    // Insert after the handle bar inside sheetHandle
+    const bar = els.sheetHandle?.querySelector('.sheet-handle-bar');
+    bar?.insertAdjacentElement('afterend', teaser);
+  }
+  teaser.textContent = countyName || "Kenya's 47 Counties";
+}
+
+// Initialise teaser on load
+updatePeekTeaser(null);
+
+// ── Drag handling ─────────────────────────────────────────────────────────────
+let dragStartY      = 0;
+let dragStartState  = 'peek';
+let isDragging      = false;
+let lastTouchY      = 0;
+let lastTouchTime   = 0;
+let dragVelocity    = 0; // px/ms — positive = downward
 
 function sheetStateY(state) {
   const sheetH = els.sidebar.offsetHeight;
@@ -177,44 +233,66 @@ function sheetStateY(state) {
 
 els.sheetHandle?.addEventListener('touchstart', e => {
   dragStartY     = e.touches[0].clientY;
+  lastTouchY     = dragStartY;
+  lastTouchTime  = Date.now();
+  dragVelocity   = 0;
   dragStartState = sheetState;
   isDragging     = true;
+  // Suspend CSS transition during finger drag for 1:1 tracking
   els.sidebar.style.transition = 'none';
 }, { passive: true });
 
 els.sheetHandle?.addEventListener('touchmove', e => {
   if (!isDragging) return;
-  const deltaY = e.touches[0].clientY - dragStartY;
+  const now    = Date.now();
+  const touchY = e.touches[0].clientY;
+
+  // Rolling velocity (px/ms), positive = moving down
+  const dt = now - lastTouchTime;
+  if (dt > 0) dragVelocity = (touchY - lastTouchY) / dt;
+  lastTouchY    = touchY;
+  lastTouchTime = now;
+
+  const deltaY = touchY - dragStartY;
   const baseY  = sheetStateY(dragStartState);
   const sheetH = els.sidebar.offsetHeight;
   const peekH  = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek'), 10) || 200;
-  const minY   = 0;
-  const maxY   = sheetH - peekH;
-  const newY   = Math.min(maxY, Math.max(minY, baseY + deltaY));
+  const newY   = Math.min(sheetH - peekH, Math.max(0, baseY + deltaY));
   els.sidebar.style.transform = `translateY(${newY}px)`;
 }, { passive: true });
 
 els.sheetHandle?.addEventListener('touchend', e => {
   if (!isDragging) return;
   isDragging = false;
+
+  // Re-enable CSS transition before snapping
   els.sidebar.style.transition = '';
   els.sidebar.style.transform  = '';
 
   const deltaY = e.changedTouches[0].clientY - dragStartY;
-  if (deltaY < -40) {
+  const DIST_THRESHOLD     = 60;   // px — raised from 40 to avoid accidental state changes
+  const VELOCITY_THRESHOLD = 0.4;  // px/ms — fast flick always changes state
+
+  const isFastFlickUp   = dragVelocity < -VELOCITY_THRESHOLD;
+  const isFastFlickDown = dragVelocity >  VELOCITY_THRESHOLD;
+  const isSwipeUp       = deltaY < -DIST_THRESHOLD;
+  const isSwipeDown     = deltaY >  DIST_THRESHOLD;
+
+  if (isFastFlickUp || isSwipeUp) {
+    // Swipe / flick upward → expand
     setSheet(dragStartState === 'peek' ? 'mid' : 'open');
     setMobBtnVisible(false);
-  } else if (deltaY > 40) {
+  } else if (isFastFlickDown || isSwipeDown) {
+    // Swipe / flick downward → collapse
     if (dragStartState === 'open') {
       setSheet('mid');
       setMobBtnVisible(!!selectedCounty);
-    } else if (dragStartState === 'mid') {
-      setSheet('peek');
-      setMobBtnVisible(!!selectedCounty);
     } else {
       setSheet('peek');
+      setMobBtnVisible(!!selectedCounty);
     }
   } else {
+    // Short drag — snap back to current state cleanly
     setSheet(dragStartState);
   }
 }, { passive: true });
@@ -407,7 +485,23 @@ export function showCounty(data, mapPathEl) {
   history.replaceState(null, '', url.toString());
 
   if (isMobile()) {
-    setSheet('mid');
+    updatePeekTeaser(data.name);
+    if (sheetState === 'mid') {
+      // Already mid — briefly dip to peek then snap back so the user
+      // feels that the content has changed (tactile snap feedback)
+      els.sidebar.classList.remove('sheet-mid');
+      els.sidebar.classList.add('sheet-peek');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          els.sidebar.classList.remove('sheet-peek');
+          els.sidebar.classList.add('sheet-mid');
+          sheetState = 'mid';
+          updateBackdrop('mid');
+        });
+      });
+    } else {
+      setSheet('mid');
+    }
     setMobBtnVisible(false);
   }
 }
@@ -491,7 +585,36 @@ els.btnShare.addEventListener('click', () => {
 });
 
 // ── COMMAND PALETTE ───────────────────────────────────────────────────────────
+let cmdCursor = -1; // index of the currently highlighted result item (-1 = none)
+
+// Returns all navigable .cmd-item elements currently rendered in the results list
+function getCmdItems() {
+  return Array.from(els.cmdResults.querySelectorAll('.cmd-item'));
+}
+
+// Apply or remove the keyboard-highlight class on a specific item index,
+// scroll it into view, and update aria-activedescendant on the input
+function setCmdCursor(index) {
+  const items = getCmdItems();
+  // Clamp with wrap-around
+  if (items.length === 0) { cmdCursor = -1; return; }
+  cmdCursor = (index + items.length) % items.length;
+
+  items.forEach((item, i) => {
+    const active = i === cmdCursor;
+    item.classList.toggle('cmd-item--active', active);
+    item.setAttribute('aria-selected', String(active));
+    if (active) {
+      // Keep the highlighted item visible without jarring full-page scroll
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      // Let screen readers announce which item is active
+      els.cmdInput.setAttribute('aria-activedescendant', item.id || '');
+    }
+  });
+}
+
 function openCmd() {
+  cmdCursor = -1;
   els.cmdOverlay.classList.add('open');
   els.cmdOverlay.setAttribute('aria-hidden', 'false');
   els.cmdInput.focus();
@@ -500,11 +623,32 @@ function openCmd() {
 }
 
 function closeCmd() {
+  cmdCursor = -1;
   els.cmdOverlay.classList.remove('open');
   els.cmdOverlay.setAttribute('aria-hidden', 'true');
   els.cmdInput.value = '';
+  els.cmdInput.removeAttribute('aria-activedescendant');
   els.navSearchTrigger.focus();
 }
+
+// Arrow-key / Enter handling on the search input
+els.cmdInput.addEventListener('keydown', e => {
+  const items = getCmdItems();
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault(); // stop the cursor jumping inside the input
+    setCmdCursor(cmdCursor + 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setCmdCursor(cmdCursor - 1);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (cmdCursor >= 0 && items[cmdCursor]) {
+      items[cmdCursor].click(); // re-use the existing activate() handler
+    }
+  }
+});
 
 els.navSearchTrigger.addEventListener('click', openCmd);
 els.navSearchTrigger.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openCmd(); });
@@ -536,6 +680,10 @@ function renderCmd(term) {
   const allCounties = Object.entries(countiesData).map(([name, d]) => ({ name, ...d }));
   const filtered    = allCounties.filter(c => countyMatchesQuery(c, q));
 
+  // Reset cursor whenever the list changes so arrow keys start fresh from top
+  cmdCursor = -1;
+  els.cmdInput.removeAttribute('aria-activedescendant');
+
   if (!filtered.length) {
     const empty = document.createElement('div');
     empty.className   = 'cmd-empty';
@@ -550,12 +698,14 @@ function renderCmd(term) {
     ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`
     : 'All 47 Counties';
 
-  const items = filtered.map(c => {
+  const items = filtered.map((c, i) => {
     const item = document.createElement('div');
     item.className        = 'cmd-item';
     item.dataset.county   = c.name;
-    item.setAttribute('role',     'option');
-    item.setAttribute('tabindex', '0');
+    item.id               = `cmd-item-${i}`; // stable ID for aria-activedescendant
+    item.setAttribute('role',          'option');
+    item.setAttribute('tabindex',      '0');
+    item.setAttribute('aria-selected', 'false');
 
     const dot = document.createElement('div');
     dot.className        = 'cmd-dot';
@@ -879,7 +1029,10 @@ function resetHome() {
   url.searchParams.delete('county');
   history.replaceState(null, '', url.toString());
 
-  if (isMobile()) setSheet('mid');
+  if (isMobile()) {
+    updatePeekTeaser(null);
+    setSheet('mid');
+  }
 
   setDailyHighlight();
 }
@@ -888,27 +1041,11 @@ els.brand.addEventListener('click', resetHome);
 els.brand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') resetHome(); });
 
 // ── INIT — triggered by main.js after map is ready ───────────────────────────
-window.addEventListener('mapready', () => {
-  setDailyHighlight();
-}, { once: true });
-
-// Fallback if mapready never fires
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    if (!document.getElementById('ph-highlight-text')?.textContent) {
-      setDailyHighlight();
-    }
-  }, 1500);
-}, { once: true });
-
-// Add to ui.js - Populate county highlights
 function populateCountyHighlights() {
   const statsGrid = document.getElementById('ph-stats-grid');
   if (!statsGrid) return;
 
   const counties = Object.entries(countiesData).map(([name, data]) => ({ name, ...data }));
-
-  // Strip commas before parsing
   const parseNum = s => parseFloat((s || '0').replace(/,/g, '')) || 0;
 
   const largestPop  = [...counties].sort((a, b) => b.popM - a.popM)[0];
@@ -940,8 +1077,17 @@ function populateCountyHighlights() {
   `;
 }
 
-// Call this when the page is ready - add to your existing mapready event listener
+// Single mapready handler — was duplicated before, causing setDailyHighlight() to run twice
 window.addEventListener('mapready', () => {
   setDailyHighlight();
-  populateCountyHighlights(); // Add this line
+  populateCountyHighlights();
+}, { once: true });
+
+// Fallback: if mapready never fires (e.g. GeoJSON blocked), still initialise the highlight
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!document.getElementById('ph-highlight-text')?.textContent) {
+      setDailyHighlight();
+    }
+  }, 1500);
 }, { once: true });

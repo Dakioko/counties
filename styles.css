@@ -246,7 +246,8 @@ body {
   transition: background 0.1s;
 }
 .cmd-item:hover,
-.cmd-item:focus-visible { background: var(--accent-light); outline: none; }
+.cmd-item:focus-visible,
+.cmd-item--active { background: var(--accent-light); outline: none; }
 
 .cmd-dot  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .cmd-main { font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--font-heading); }
@@ -479,17 +480,47 @@ body {
 }
 #svg-map { width: 100%; height: 100%; }
 
+@keyframes map-spin {
+  to { transform: rotate(360deg); }
+}
+
 #map-wrap.loading::after {
-  content: 'Loading map…';
+  content: '';
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  color: var(--muted);
   background: linear-gradient(150deg, #e8e4dc, #ddd9d0);
+}
+
+/* Spinner ring rendered via a separate element injected by map.js */
+.map-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 5;
+  pointer-events: none;
+}
+.map-spinner-ring {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: map-spin 0.75s linear infinite;
+}
+.map-spinner-label {
+  font-size: 12px;
+  color: var(--muted);
   font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .map-error {
@@ -514,35 +545,6 @@ body {
   cursor: pointer;
   font-size: 13px;
   font-family: var(--font-body);
-}
-
-#map-hint {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(10,31,20,0.88);
-  color: rgba(255,255,255,0.92);
-  font-size: 12px;
-  font-weight: 500;
-  font-family: var(--font-body);
-  padding: 8px 16px;
-  border-radius: 20px;
-  display: none;
-  align-items: center;
-  gap: 6px;
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 5;
-  transition: opacity 0.4s, transform 0.4s;
-}
-#map-hint.dismissed {
-  opacity: 0;
-  transform: translateX(-50%) translateY(8px);
-  pointer-events: none;
-}
-@media (max-width: 768px) {
-  #map-hint { display: flex; }
 }
 
 #btn-reset-zoom {
@@ -575,6 +577,11 @@ body {
 .county-path:focus-visible {
   filter: brightness(0.88) drop-shadow(0 3px 6px rgba(0,0,0,0.15));
   outline: none;
+}
+/* Keyboard focus ring — visible only when navigating by keyboard */
+.county-path:focus-visible {
+  stroke: var(--accent);
+  stroke-width: 2.5;
 }
 .county-path.selected    { stroke: #0d1b2a; stroke-width: 2.5; filter: drop-shadow(0 0 8px rgba(0,0,0,0.3)); }
 .county-path.pinned-path { stroke: var(--green); stroke-width: 2; }
@@ -1444,22 +1451,85 @@ body {
   #sidebar.sheet-mid  { transform: translateY(calc(100% - var(--sheet-mid))); }
   #sidebar.sheet-open { transform: translateY(0); }
 
+  /* Bounce hint on first load — nudges up then settles to hint sheet is draggable */
+  @keyframes sheet-bounce {
+    0%   { transform: translateY(calc(100% - var(--sheet-peek))); }
+    40%  { transform: translateY(calc(100% - var(--sheet-peek) - 22px)); }
+    65%  { transform: translateY(calc(100% - var(--sheet-peek) + 6px)); }
+    82%  { transform: translateY(calc(100% - var(--sheet-peek) - 8px)); }
+    100% { transform: translateY(calc(100% - var(--sheet-peek))); }
+  }
+  #sidebar.sheet-bounce-hint {
+    animation: sheet-bounce 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Sheet handle — larger pill, flex-column to hold teaser below */
   .sheet-handle {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 10px 0 6px;
+    gap: 6px;
+    padding: 10px 0 10px;
     cursor: grab;
     flex-shrink: 0;
     background: var(--surface);
     border-radius: 18px 18px 0 0;
+    min-height: 44px;
   }
   .sheet-handle:active { cursor: grabbing; }
 
+  /* Make the pill itself a bit larger and more obvious */
+  .sheet-handle-bar {
+    width: 40px;
+    height: 5px;
+    border-radius: 99px;
+    background: var(--border-hover, #d0cdc8);
+    flex-shrink: 0;
+  }
+
+  /* Peek teaser — county name or default text shown in the handle strip */
+  #sheet-peek-teaser {
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-heading);
+    color: var(--muted);
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100vw - 40px);
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  /* Hide teaser once sheet is mid or open — it's only meaningful at peek */
+  #sidebar.sheet-mid  #sheet-peek-teaser,
+  #sidebar.sheet-open #sheet-peek-teaser { opacity: 0; }
+  #sidebar.sheet-peek #sheet-peek-teaser { opacity: 1; }
+
+  /* In peek state, hide the full panel content but keep the handle + teaser */
   #sidebar.sheet-peek #county-panel,
   #sidebar.sheet-peek #placeholder { display: none; }
 
-  #map-hint       { bottom: 70px; }
+  /* ── Backdrop ─────────────────────────────────────────────────────── */
+  #sheet-backdrop {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 9; /* just below sidebar z-index: 10 */
+    background: rgba(10, 20, 14, 0);
+    transition: background 0.35s ease;
+    pointer-events: none;
+  }
+  #sheet-backdrop.visible {
+    display: block;
+    pointer-events: auto;
+    background: rgba(10, 20, 14, 0.25);
+  }
+  #sheet-backdrop.full {
+    background: rgba(10, 20, 14, 0.45);
+  }
+
   #btn-reset-zoom { top: 10px; right: 10px; }
 
   .county-name { font-size: 22px; }
@@ -1505,10 +1575,22 @@ body {
   .kf-value        { font-size: 13px; }
   .gcp-amount      { font-size: 22px; }
   .hero-top        { flex-wrap: wrap; }
-  .compare-pin-btn { margin-top: 0; }
-  .tab-btn         { padding: 10px 8px; font-size: 11px; }
+  .compare-pin-btn {
+    margin-top: 0;
+    padding: 10px 14px;   /* was 7px 12px — now ≥44px tap height */
+    font-size: 12px;
+  }
+  /* Tab buttons: min-height 44px, flex to keep text centred */
+  .tab-btn {
+    padding: 0 8px;
+    font-size: 11px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .sc-grid         { grid-template-columns: 1fr 1fr; }
-  .act-btn         { font-size: 11px; padding: 9px 10px; }
+  .act-btn         { font-size: 11px; padding: 12px 10px; min-height: 44px; }
   #btn-reset-zoom  { padding: 7px 9px; }
 
   .ph-hero-title  { font-size: 18px; }
@@ -1523,7 +1605,7 @@ body {
   .county-name { font-size: 18px; }
   .kf-cell     { padding: 8px 10px; }
   .kf-icon     { width: 24px; height: 24px; }
-  .tab-btn     { padding: 9px 10px; font-size: 11px; flex-shrink: 0; }
+  .tab-btn     { padding: 0 8px; font-size: 11px; flex-shrink: 0; min-height: 44px; }
   .sc-grid     { grid-template-columns: 1fr; }
 }
 
@@ -1535,6 +1617,7 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  #map-hint { display: none; }
   .ph-dyk-text { transition: none; }
+  .map-spinner-ring { animation: none; }
+  #sidebar.sheet-bounce-hint { animation: none; }
 }
