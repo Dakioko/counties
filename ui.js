@@ -207,7 +207,7 @@ function updatePeekTeaser(countyName) {
     const bar = els.sheetHandle?.querySelector('.sheet-handle-bar');
     bar?.insertAdjacentElement('afterend', teaser);
   }
-  teaser.textContent = countyName || "Kenya's 47 Counties";
+  teaser.textContent = countyName || "Tap a County to Explore";
 }
 
 // Initialise teaser on load

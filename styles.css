@@ -2,17 +2,18 @@
    styles.css — Kenya County Explorer
    ════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=Lora:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&display=swap');
 
 /* ── DESIGN TOKENS ─────────────────────────────────────────────── */
 :root {
   --nav-h:       56px;
   --sidebar-w:   700px;
 
-  --bg:          #fafaf9;
-  --surface:     #ffffff;
-  --border:      #e8e6e1;
-  --border-hover:#d0cdc8;
+  --bg:          #f7f5f1;
+  --surface:     #fdfcfa;
+  --surface-alt: #f4f2ee;
+  --border:      #e6e3dc;
+  --border-hover:#ccc9c1;
   --text:        #1a1917;
   --muted:       #6b6965;
   --muted-light: #9c9893;
@@ -27,9 +28,9 @@
   --green-dim:   rgba(74,222,128,0.4);
   --nav-dark:    #0a1f14;
 
-  --shadow-sm:   0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md:   0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg:   0 12px 40px rgba(0,0,0,0.12);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.09);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,0.13);
 
   --radius:      12px;
 
@@ -37,9 +38,9 @@
   --sheet-mid:  52vh;
   --sheet-full: calc(100vh - var(--nav-h));
 
-  --font-heading: 'Figtree', system-ui, -apple-system, sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Lora', Georgia, serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif:   'Crimson Pro', Georgia, serif;
 }
 
 /* ── RESET ──────────────────────────────────────────────────────── */
@@ -650,8 +651,9 @@ body {
   overflow: hidden;
   flex-shrink: 0;
 }
-.hero-band { height: 4px; width: 100%; }
-.hero-body { padding: 14px 20px 16px; }
+/* Region accent bar — thicker and more impactful */
+.hero-band { height: 5px; width: 100%; }
+.hero-body { padding: 18px 20px 18px; }
 .hero-top {
   display: flex;
   align-items: flex-start;
@@ -663,11 +665,11 @@ body {
 .county-name-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .county-name {
   font-family: var(--font-heading);
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 800;
   line-height: 1.1;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
 }
 .county-code-badge {
   font-size: 11px;
@@ -678,6 +680,19 @@ body {
   position: relative;
   top: -2px;
   font-family: var(--font-body);
+}
+
+/* Region pill — bolder, more visible identity anchor */
+.region-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.2px;
 }
 .compare-pin-btn {
   background: var(--bg);
@@ -704,22 +719,30 @@ body {
 .key-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2px;
+  gap: 3px;
   background: var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
   margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
 }
 .kf-cell {
   background: var(--surface);
-  padding: 12px 14px;
+  padding: 14px 14px;
   display: flex;
   align-items: center;
   gap: 10px;
   transition: background 0.15s;
 }
-.kf-cell:hover { background: var(--bg); }
+.kf-cell:hover { background: var(--surface-alt); }
+/* First cell (population) gets slightly more prominence */
+.kf-cell:first-child {
+  padding: 16px 14px;
+}
+.kf-cell:first-child .kf-value {
+  font-size: 18px;
+}
 
 .kf-icon {
   width: 32px; height: 32px;
@@ -787,14 +810,14 @@ body {
   background: var(--bg);
   -webkit-overflow-scrolling: touch;
 }
-.tab-pane        { display: none; padding: 16px 20px; flex-direction: column; gap: 14px; }
+.tab-pane        { display: none; padding: 18px 20px; flex-direction: column; gap: 16px; }
 .tab-pane.active { display: flex; }
 
 .sec-title {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.8px;
   color: var(--muted);
   margin-bottom: 8px;
   font-family: var(--font-body);
@@ -803,34 +826,36 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 16px;
-  font-size: 13px;
+  padding: 16px 18px;
+  font-size: 14px;
   color: var(--text);
-  line-height: 1.75;
+  line-height: 1.8;
   font-weight: 400;
   font-family: var(--font-body);
+  box-shadow: var(--shadow-sm);
 }
 .fact-box {
   background: var(--accent-light);
   border: 1px solid var(--accent-line);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
 }
 .fact-label {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   color: var(--accent);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-family: var(--font-body);
 }
 .fact-text {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 16px;
+  font-size: 17px;
   color: #1e3a6e;
-  line-height: 1.65;
+  line-height: 1.7;
   font-weight: 400;
 }
 
@@ -843,36 +868,43 @@ body {
   overflow: hidden;
   border: 1px solid var(--border);
   list-style: none;
+  box-shadow: var(--shadow-sm);
 }
 .item-row {
   background: var(--surface);
-  padding: 10px 14px;
-  font-size: 13px;
+  padding: 11px 16px;
+  font-size: 14px;
   color: var(--text);
   font-weight: 400;
   font-family: var(--font-body);
+  line-height: 1.5;
 }
+.item-row:nth-child(even) { background: var(--surface-alt); }
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 6px 12px;
+  border-radius: 99px;
+  padding: 5px 13px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text);
   font-family: var(--font-body);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s, border-color 0.15s;
 }
+.chip:hover { background: var(--surface-alt); border-color: var(--border-hover); }
 
-.econ-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.econ-top  { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.econ-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.econ-top  { padding: 16px 18px; border-bottom: 1px solid var(--border); background: var(--surface); }
 .gcp-amount {
-  font-family: var(--font-heading);
-  font-size: 28px;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.2px;
+  font-style: italic;
 }
 .gcp-sub      { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--font-body); }
 .gcp-bar-track {
