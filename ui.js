@@ -62,6 +62,10 @@ const els = {
   compareGoBtn:      document.getElementById('compare-go-btn'),
   compareClearBtn:   document.getElementById('compare-clear-btn'),
   compareSrStatus:   document.getElementById('compare-sr-status'),
+  compareBarMobile:  document.getElementById('compare-bar-mobile'),
+  compareGoBtnMob:   document.getElementById('compare-go-btn-mobile'),
+  compareClearBtnMob:document.getElementById('compare-clear-btn-mobile'),
+  cbarMobCount:      document.getElementById('cbar-mob-count'),
   compareModal:      document.getElementById('compare-modal'),
   compareModalBody:  document.getElementById('compare-modal-body'),
   compareModalClose: document.getElementById('compare-modal-close'),
@@ -802,14 +806,25 @@ els.btnPinCounty.addEventListener('click', () => {
 function renderCompareBar() {
   if (!pinnedCounties.length) {
     els.compareBar.classList.remove('visible');
+    els.compareBarMobile?.classList.remove('visible');
     return;
   }
   els.compareBar.classList.add('visible');
+  els.compareBarMobile?.classList.add('visible');
 
   const isReady = pinnedCounties.length >= 2;
+
+  // Desktop bar
   els.compareGoBtn.disabled = !isReady;
   els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
   els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
+
+  // Mobile bar
+  if (els.cbarMobCount) els.cbarMobCount.textContent = pinnedCounties.length;
+  if (els.compareGoBtnMob) {
+    els.compareGoBtnMob.disabled = !isReady;
+    els.compareGoBtnMob.setAttribute('aria-disabled', String(!isReady));
+  }
 
   els.compareSrStatus.textContent =
     `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
@@ -859,7 +874,20 @@ els.compareClearBtn.addEventListener('click', () => {
   _updatePinnedPaths?.([], selectedCounty?.name);
 });
 
+// Mirror clear on mobile bar
+els.compareClearBtnMob?.addEventListener('click', () => {
+  pinnedCounties = [];
+  if (selectedCounty) updatePinBtn(selectedCounty.name);
+  renderCompareBar();
+  _updatePinnedPaths?.([], selectedCounty?.name);
+});
+
 els.compareGoBtn.addEventListener('click', () => {
+  if (pinnedCounties.length >= 2) openCompareModal();
+});
+
+// Mirror compare on mobile bar
+els.compareGoBtnMob?.addEventListener('click', () => {
   if (pinnedCounties.length >= 2) openCompareModal();
 });
 

@@ -106,6 +106,16 @@
       </button>
     </div>
 
+    <!-- MOBILE COMPARE BAR — lives outside placeholder/county-panel so it persists across both states -->
+    <div id="compare-bar-mobile" aria-label="Compare pinned counties" aria-live="polite">
+      <span class="cbar-mob-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span id="cbar-mob-count"></span> pinned
+      </span>
+      <button class="compare-go-btn cbar-mob-go" id="compare-go-btn-mobile" disabled aria-disabled="true">Compare</button>
+      <button class="compare-clear-btn cbar-mob-clear" id="compare-clear-btn-mobile" aria-label="Clear pinned counties">Clear</button>
+    </div>
+
     <!-- PLACEHOLDER -->
     <div id="placeholder" aria-live="polite">
 
@@ -279,16 +289,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Mobile compare bar -->
-      <div id="compare-bar-mobile" aria-label="Compare pinned counties" aria-live="polite">
-        <span class="cbar-mob-label">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span id="cbar-mob-count"></span> pinned
-        </span>
-        <button class="compare-go-btn cbar-mob-go" id="compare-go-btn-mobile" disabled aria-disabled="true">Compare</button>
-        <button class="compare-clear-btn cbar-mob-clear" id="compare-clear-btn-mobile" aria-label="Clear pinned counties">Clear</button>
       </div>
 
       <!-- Tab bar -->
