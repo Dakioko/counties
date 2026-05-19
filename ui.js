@@ -57,11 +57,15 @@ const els = {
   sidebar:           document.getElementById('sidebar'),
   sheetHandle:       document.getElementById('sheet-handle'),
   sheetExpandBtn:    document.getElementById('sheet-expand-btn'),
-  compareBar:        document.getElementById('compare-bar'),
-  compareSlots:      document.getElementById('compare-slots'),
-  compareGoBtn:      document.getElementById('compare-go-btn'),
-  compareClearBtn:   document.getElementById('compare-clear-btn'),
-  compareSrStatus:   document.getElementById('compare-sr-status'),
+  compareBar:         document.getElementById('compare-bar'),
+  compareSlots:       document.getElementById('compare-slots'),
+  compareGoBtn:       document.getElementById('compare-go-btn'),
+  compareClearBtn:    document.getElementById('compare-clear-btn'),
+  compareSrStatus:    document.getElementById('compare-sr-status'),
+  compareBarMobile:   document.getElementById('compare-bar-mobile'),
+  compareGoBtnMob:    document.getElementById('compare-go-btn-mobile'),
+  compareClearBtnMob: document.getElementById('compare-clear-btn-mobile'),
+  cbarMobCount:       document.getElementById('cbar-mob-count'),
   compareModal:      document.getElementById('compare-modal'),
   compareModalBody:  document.getElementById('compare-modal-body'),
   compareModalClose: document.getElementById('compare-modal-close'),
@@ -170,18 +174,11 @@ function setSheet(state, animate = true) {
   updateBackdrop(state);
 }
 
-// On first mobile load: start at peek, then after a short delay bounce to hint
-// that the sheet is draggable
+// On first mobile load: show the placeholder content at mid height so users
+// see the onboarding panel immediately. Sheet drops to peek only after a
+// county is selected (see showCounty). Dragging still works at any time.
 if (isMobile()) {
-  setSheet('peek');
-  setTimeout(() => {
-    if (sheetState === 'peek') {
-      els.sidebar.classList.add('sheet-bounce-hint');
-      els.sidebar.addEventListener('animationend', () => {
-        els.sidebar.classList.remove('sheet-bounce-hint');
-      }, { once: true });
-    }
-  }, 1200);
+  setSheet('mid');
 }
 
 function setMobBtnVisible(_visible) {}
@@ -531,22 +528,17 @@ export function showCounty(data, mapPathEl) {
 
   if (isMobile()) {
     updatePeekTeaser(data.name);
-    if (sheetState === 'mid') {
-      // Already mid — briefly dip to peek then snap back so the user
-      // feels that the content has changed (tactile snap feedback)
-      els.sidebar.classList.remove('sheet-mid');
-      els.sidebar.classList.add('sheet-peek');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          els.sidebar.classList.remove('sheet-peek');
-          els.sidebar.classList.add('sheet-mid');
-          sheetState = 'mid';
-          updateBackdrop('mid');
-        });
-      });
-    } else {
+    // If the sheet was at mid showing the placeholder (first interaction),
+    // drop to peek so the map opens up. If the user is already browsing
+    // counties (peek or open), snap to mid so the county detail is readable.
+    if (sheetState === 'mid' && !els.countyPanel.classList.contains('was-active')) {
+      // First county selection — collapse to peek to reveal the map
+      setSheet('peek');
+    } else if (sheetState !== 'open') {
       setSheet('mid');
     }
+    // Mark that a county has been viewed so subsequent selections go to mid
+    els.countyPanel.classList.add('was-active');
     setMobBtnVisible(false);
   }
 }
@@ -847,14 +839,25 @@ els.btnPinCounty.addEventListener('click', () => {
 function renderCompareBar() {
   if (!pinnedCounties.length) {
     els.compareBar.classList.remove('visible');
+    els.compareBarMobile?.classList.remove('visible');
     return;
   }
   els.compareBar.classList.add('visible');
+  els.compareBarMobile?.classList.add('visible');
 
   const isReady = pinnedCounties.length >= 2;
+
+  // Desktop bar
   els.compareGoBtn.disabled = !isReady;
   els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
   els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
+
+  // Mobile bar count + button state
+  if (els.cbarMobCount)    els.cbarMobCount.textContent = pinnedCounties.length;
+  if (els.compareGoBtnMob) {
+    els.compareGoBtnMob.disabled = !isReady;
+    els.compareGoBtnMob.setAttribute('aria-disabled', String(!isReady));
+  }
 
   els.compareSrStatus.textContent =
     `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
@@ -904,7 +907,20 @@ els.compareClearBtn.addEventListener('click', () => {
   _updatePinnedPaths?.([], selectedCounty?.name);
 });
 
+// Mirror clear on mobile bar
+els.compareClearBtnMob?.addEventListener('click', () => {
+  pinnedCounties = [];
+  if (selectedCounty) updatePinBtn(selectedCounty.name);
+  renderCompareBar();
+  _updatePinnedPaths?.([], selectedCounty?.name);
+});
+
 els.compareGoBtn.addEventListener('click', () => {
+  if (pinnedCounties.length >= 2) openCompareModal();
+});
+
+// Mirror compare on mobile bar
+els.compareGoBtnMob?.addEventListener('click', () => {
   if (pinnedCounties.length >= 2) openCompareModal();
 });
 
@@ -1160,6 +1176,7 @@ function resetHome() {
 
   if (isMobile()) {
     updatePeekTeaser(null);
+    els.countyPanel.classList.remove('was-active');
     setSheet('mid');
   }
 
