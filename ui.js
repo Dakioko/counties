@@ -62,10 +62,6 @@ const els = {
   compareGoBtn:      document.getElementById('compare-go-btn'),
   compareClearBtn:   document.getElementById('compare-clear-btn'),
   compareSrStatus:   document.getElementById('compare-sr-status'),
-  compareBarMobile:  document.getElementById('compare-bar-mobile'),
-  compareGoBtnMob:   document.getElementById('compare-go-btn-mobile'),
-  compareClearBtnMob:document.getElementById('compare-clear-btn-mobile'),
-  cbarMobCount:      document.getElementById('cbar-mob-count'),
   compareModal:      document.getElementById('compare-modal'),
   compareModalBody:  document.getElementById('compare-modal-body'),
   compareModalClose: document.getElementById('compare-modal-close'),
@@ -443,14 +439,15 @@ export function showCounty(data, mapPathEl) {
 
   // Geography tab
   const geo = data.geo || {};
-  const geoFields = [
-    { label: 'Terrain',   val: geo.terrain    },
-    { label: 'Climate',   val: geo.climate    },
-    { label: 'Elevation', val: geo.elevation  },
-    { label: 'Borders',   val: geo.neighbours },
+
+  // Plain-text geo fields (terrain, climate, elevation)
+  const plainGeoFields = [
+    { label: 'Terrain',   val: geo.terrain   },
+    { label: 'Climate',   val: geo.climate   },
+    { label: 'Elevation', val: geo.elevation },
   ].filter(f => f.val);
 
-  const geoCells = geoFields.map(f => {
+  const geoCells = plainGeoFields.map(f => {
     const cell = document.createElement('div');
     cell.className = 'geo-cell';
     const dt = document.createElement('dt');
@@ -462,6 +459,50 @@ export function showCounty(data, mapPathEl) {
     cell.append(dt, dd);
     return cell;
   });
+
+  // Neighbour chips — tappable if the neighbour is a known county
+  if (geo.neighbours) {
+    const neighbourNames = geo.neighbours
+      .split(/,\s*/)
+      .map(n => n.trim())
+      .filter(Boolean);
+
+    const neighbourCell = document.createElement('div');
+    neighbourCell.className = 'geo-cell geo-cell--full';
+
+    const dt = document.createElement('dt');
+    dt.className   = 'geo-label';
+    dt.textContent = 'Borders';
+
+    const chipWrap = document.createElement('dd');
+    chipWrap.className = 'geo-neighbour-chips';
+
+    neighbourNames.forEach(name => {
+      const isCounty = !!countiesData[name];
+      const chip = document.createElement(isCounty ? 'button' : 'span');
+      chip.className = 'geo-neighbour-chip' + (isCounty ? ' geo-neighbour-chip--link' : '');
+      chip.textContent = name;
+
+      if (isCounty) {
+        chip.type = 'button';
+        chip.setAttribute('aria-label', `Explore ${name} County`);
+        chip.addEventListener('click', () => {
+          const neighbourData = { name, ...countiesData[name] };
+          // Find the SVG path for this neighbour
+          let pathEl = null;
+          _g?.selectAll('path').each(function(d) {
+            if (_findMatch?.(d)?.name === name) pathEl = this;
+          });
+          showCounty(neighbourData, pathEl);
+        });
+      }
+      chipWrap.appendChild(chip);
+    });
+
+    neighbourCell.append(dt, chipWrap);
+    geoCells.push(neighbourCell);
+  }
+
   replaceChildren(els.cGeo, geoCells);
   replaceChildren(els.cConnect, buildListItems(data.connectivity));
 
@@ -806,25 +847,14 @@ els.btnPinCounty.addEventListener('click', () => {
 function renderCompareBar() {
   if (!pinnedCounties.length) {
     els.compareBar.classList.remove('visible');
-    els.compareBarMobile?.classList.remove('visible');
     return;
   }
   els.compareBar.classList.add('visible');
-  els.compareBarMobile?.classList.add('visible');
 
   const isReady = pinnedCounties.length >= 2;
-
-  // Desktop bar
   els.compareGoBtn.disabled = !isReady;
   els.compareGoBtn.setAttribute('aria-disabled', String(!isReady));
   els.compareGoBtn.title = isReady ? '' : 'Pin at least 2 counties to compare';
-
-  // Mobile bar
-  if (els.cbarMobCount) els.cbarMobCount.textContent = pinnedCounties.length;
-  if (els.compareGoBtnMob) {
-    els.compareGoBtnMob.disabled = !isReady;
-    els.compareGoBtnMob.setAttribute('aria-disabled', String(!isReady));
-  }
 
   els.compareSrStatus.textContent =
     `${pinnedCounties.length} of 3 counties pinned. ${isReady ? 'Ready to compare.' : 'Pin one more to compare.'}`;
@@ -874,20 +904,7 @@ els.compareClearBtn.addEventListener('click', () => {
   _updatePinnedPaths?.([], selectedCounty?.name);
 });
 
-// Mirror clear on mobile bar
-els.compareClearBtnMob?.addEventListener('click', () => {
-  pinnedCounties = [];
-  if (selectedCounty) updatePinBtn(selectedCounty.name);
-  renderCompareBar();
-  _updatePinnedPaths?.([], selectedCounty?.name);
-});
-
 els.compareGoBtn.addEventListener('click', () => {
-  if (pinnedCounties.length >= 2) openCompareModal();
-});
-
-// Mirror compare on mobile bar
-els.compareGoBtnMob?.addEventListener('click', () => {
   if (pinnedCounties.length >= 2) openCompareModal();
 });
 
@@ -903,130 +920,214 @@ function openCompareModal() {
   const TIER_COLORS = { high: '#166534',    mid: '#854d0e',  low: '#475569'    };
   const TIER_BG     = { high: '#dcfce7',    mid: '#fef9c3',  low: '#f1f5f9'    };
 
-  const cards = counties.map(c => {
-    const color = REGION_COLORS[c.region] || '#2563eb';
-    const pct   = ((c.popM / KENYA_POP_MILLIONS) * 100).toFixed(2);
+  // ── Helper: find the index of the county with the best (highest) numeric value
+  function winnerIdx(values) {
+    const nums = values.map(v => parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0);
+    const max = Math.max(...nums);
+    return max > 0 ? nums.indexOf(max) : -1;
+  }
 
-    const card = document.createElement('div');
-    card.className = 'cmp-card';
+  // ── Rows: each entry is { label, values[], higherIsBetter }
+  const rows = [
+    {
+      label: 'Population',
+      values: counties.map(c => c.pop || '—'),
+      nums:   counties.map(c => c.popM),
+      higherIsBetter: true,
+    },
+    {
+      label: 'GCP (est.)',
+      values: counties.map(c => c.gcp || '—'),
+      nums:   counties.map(c => parseGcpValue(c.gcp)),
+      higherIsBetter: true,
+    },
+    {
+      label: 'Area km²',
+      values: counties.map(c => c.area || '—'),
+      nums:   counties.map(c => parseInt((c.area||'0').replace(/,/g,''),10) || 0),
+      higherIsBetter: false, // neither; no winner highlight
+      noWinner: true,
+    },
+    {
+      label: 'Density /km²',
+      values: counties.map(c => calcDensity(c)),
+      nums:   counties.map(c => {
+        const a = parseInt((c.area||'0').replace(/,/g,''),10);
+        return a ? c.popM * 1_000_000 / a : 0;
+      }),
+      higherIsBetter: false,
+      noWinner: true,
+    },
+    {
+      label: '% of Kenya',
+      values: counties.map(c => ((c.popM / KENYA_POP_MILLIONS) * 100).toFixed(2) + '%'),
+      nums:   counties.map(c => c.popM / KENYA_POP_MILLIONS),
+      higherIsBetter: true,
+    },
+    {
+      label: 'Sub-counties',
+      values: counties.map(c => String(c.subcounties?.length ?? '—')),
+      nums:   counties.map(c => c.subcounties?.length ?? 0),
+      higherIsBetter: false,
+      noWinner: true,
+    },
+    {
+      label: 'GCP tier',
+      values: counties.map(c => TIER_LABELS[c.gcpTier] || '—'),
+      nums:   counties.map(c => ({ high: 3, mid: 2, low: 1 }[c.gcpTier] || 0)),
+      higherIsBetter: true,
+      isTier: true,
+      tierData: counties.map(c => ({ label: TIER_LABELS[c.gcpTier]||'—', bg: TIER_BG[c.gcpTier], color: TIER_COLORS[c.gcpTier] })),
+    },
+    {
+      label: 'Climate',
+      values: counties.map(c => c.geo?.climate || '—'),
+      noWinner: true,
+    },
+    {
+      label: 'Elevation',
+      values: counties.map(c => c.geo?.elevation || '—'),
+      noWinner: true,
+    },
+    {
+      label: 'Key Industries',
+      values: counties.map(c => (c.industries || []).join(', ') || '—'),
+      noWinner: true,
+      isLong: true,
+    },
+    {
+      label: 'Governor',
+      values: counties.map(c => c.governor || '—'),
+      noWinner: true,
+    },
+  ];
+
+  // ── Build comparison table ────────────────────────────────────────────────
+  const table = document.createElement('table');
+  table.className = 'cmp-table';
+  table.setAttribute('role', 'table');
+
+  // Sticky header row with county names + region colours
+  const colgroup = document.createElement('colgroup');
+  // label col
+  const labelCol = document.createElement('col');
+  labelCol.className = 'cmp-col-label';
+  colgroup.appendChild(labelCol);
+  counties.forEach(() => {
+    const col = document.createElement('col');
+    col.className = 'cmp-col-county';
+    colgroup.appendChild(col);
+  });
+  table.appendChild(colgroup);
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+
+  // Empty corner cell
+  const cornerTh = document.createElement('th');
+  cornerTh.className = 'cmp-th-corner';
+  cornerTh.setAttribute('scope', 'col');
+  headerRow.appendChild(cornerTh);
+
+  counties.forEach(c => {
+    const color = REGION_COLORS[c.region] || '#2563eb';
+    const th = document.createElement('th');
+    th.className = 'cmp-th-county';
+    th.setAttribute('scope', 'col');
 
     const band = document.createElement('div');
-    band.className        = 'cmp-card-band';
+    band.className = 'cmp-th-band';
     band.style.background = color;
-    band.setAttribute('aria-hidden', 'true');
 
-    const titleRow = document.createElement('div');
-    titleRow.className = 'cmp-card-title-row';
-    const nameEl = document.createElement('div');
-    nameEl.className   = 'cmp-card-name';
-    nameEl.textContent = c.name;
-    const hqEl = document.createElement('div');
-    hqEl.className   = 'cmp-card-hq';
-    hqEl.textContent = `HQ: ${c.cap} · No. ${c.code}`;
-    titleRow.append(nameEl, hqEl);
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'cmp-th-name';
+    nameDiv.textContent = c.name;
 
-    const header = document.createElement('div');
-    header.className = 'cmp-card-header';
-    header.append(band, titleRow);
+    const hqDiv = document.createElement('div');
+    hqDiv.className = 'cmp-th-hq';
+    hqDiv.textContent = `${c.cap} · No. ${c.code}`;
 
-    const bigStats = [
-      { label: 'Population',   val: c.pop,        accent: true },
-      { label: 'GCP (est.)',   val: c.gcp                      },
-      { label: 'Area km²',     val: c.area                     },
-      { label: 'Density /km²', val: calcDensity(c)             },
-    ].map(({ label, val, accent }) => {
-      const cell = document.createElement('div');
-      cell.className = 'cmp-big-cell' + (accent ? ' accent' : '');
-      const lbl = document.createElement('div');
-      lbl.className   = 'cmp-big-label';
-      lbl.textContent = label;
-      const v = document.createElement('div');
-      v.className   = 'cmp-big-val' + (accent ? ' accent' : '');
-      v.textContent = val || '—';
-      cell.append(lbl, v);
-      return cell;
-    });
-    const bigGrid = document.createElement('div');
-    bigGrid.className = 'cmp-big-stats';
-    bigGrid.append(...bigStats);
+    th.append(band, nameDiv, hqDiv);
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
 
-    const tierRow = document.createElement('div');
-    tierRow.className = 'cmp-fact-row';
-    const tierLbl = document.createElement('span');
-    tierLbl.className   = 'cmp-fact-label';
-    tierLbl.textContent = 'GCP tier';
-    const tierBadge = document.createElement('span');
-    Object.assign(tierBadge.style, {
-      background: TIER_BG[c.gcpTier],   color: TIER_COLORS[c.gcpTier],
-      padding: '2px 8px',               borderRadius: '4px',
-      fontSize: '11px',                 fontWeight: '700',
-    });
-    tierBadge.textContent = TIER_LABELS[c.gcpTier] || '—';
-    const tierVal = document.createElement('span');
-    tierVal.className = 'cmp-fact-val';
-    tierVal.appendChild(tierBadge);
-    tierRow.append(tierLbl, tierVal);
+  // Body rows
+  const tbody = document.createElement('tbody');
+  rows.forEach(row => {
+    const w = (!row.noWinner && row.nums) ? winnerIdx(row.nums) : -1;
 
-    const facts = document.createElement('div');
-    facts.className = 'cmp-facts';
-    facts.appendChild(tierRow);
+    const tr = document.createElement('tr');
+    tr.className = 'cmp-tr';
 
-    [
-      { label: '% of Kenya pop.', val: pct + '%'                          },
-      { label: 'Sub-counties',    val: String(c.subcounties?.length ?? '—') },
-      { label: 'Climate',         val: c.geo?.climate   || '—'            },
-      { label: 'Elevation',       val: c.geo?.elevation || '—'            },
-    ].forEach(({ label, val }) => {
-      const row = document.createElement('div');
-      row.className = 'cmp-fact-row';
-      const l = document.createElement('span');
-      l.className   = 'cmp-fact-label';
-      l.textContent = label;
-      const v = document.createElement('span');
-      v.className   = 'cmp-fact-val';
-      v.textContent = val;
-      row.append(l, v);
-      facts.appendChild(row);
+    const labelTd = document.createElement('td');
+    labelTd.className = 'cmp-td-label';
+    labelTd.textContent = row.label;
+    tr.appendChild(labelTd);
+
+    counties.forEach((c, i) => {
+      const td = document.createElement('td');
+      td.className = 'cmp-td-val' + (i === w ? ' cmp-td-winner' : '');
+
+      if (row.isTier) {
+        const badge = document.createElement('span');
+        const td_data = row.tierData[i];
+        Object.assign(badge.style, {
+          background: td_data.bg,
+          color: td_data.color,
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: '700',
+        });
+        badge.textContent = td_data.label;
+        td.appendChild(badge);
+      } else {
+        td.textContent = row.values[i];
+      }
+
+      if (i === w) {
+        const crown = document.createElement('span');
+        crown.className = 'cmp-winner-crown';
+        crown.setAttribute('aria-label', 'highest value');
+        crown.textContent = '↑';
+        td.appendChild(crown);
+      }
+
+      tr.appendChild(td);
     });
 
-    const chipSection = document.createElement('div');
-    chipSection.className = 'cmp-chip-section';
-    const chipLabel = document.createElement('div');
-    chipLabel.className   = 'cmp-chip-label';
-    chipLabel.textContent = 'Key Industries';
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  // Industries chips below table
+  const chipsSection = document.createElement('div');
+  chipsSection.className = 'cmp-industries-row';
+  counties.forEach(c => {
+    const col = document.createElement('div');
+    col.className = 'cmp-ind-col';
+    const colLabel = document.createElement('div');
+    colLabel.className = 'cmp-ind-label';
+    colLabel.textContent = c.name + ' industries';
     const chips = document.createElement('div');
     chips.className = 'cmp-chips';
     (c.industries || []).forEach(ind => {
       const chip = document.createElement('span');
-      chip.className   = 'cmp-chip';
+      chip.className = 'cmp-chip';
       chip.textContent = ind;
       chips.appendChild(chip);
     });
-    chipSection.append(chipLabel, chips);
-
-    const gov = document.createElement('div');
-    gov.className = 'cmp-governor';
-    const govSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    govSvg.setAttribute('width',        '12');
-    govSvg.setAttribute('height',       '12');
-    govSvg.setAttribute('viewBox',      '0 0 24 24');
-    govSvg.setAttribute('fill',         'none');
-    govSvg.setAttribute('stroke',       'currentColor');
-    govSvg.setAttribute('stroke-width', '2');
-    govSvg.setAttribute('aria-hidden',  'true');
-    govSvg.innerHTML = '<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>';
-    const govStrong = document.createElement('strong');
-    govStrong.textContent = c.governor || '—';
-    gov.append(govSvg, govStrong);
-
-    card.append(header, bigGrid, facts, chipSection, gov);
-    return card;
+    col.append(colLabel, chips);
+    chipsSection.appendChild(col);
   });
 
-  const cardWrap = document.createElement('div');
-  cardWrap.className = 'cmp-cards';
-  cardWrap.append(...cards);
-  els.compareModalBody.replaceChildren(cardWrap);
+  const wrap = document.createElement('div');
+  wrap.className = 'cmp-table-wrap';
+  wrap.appendChild(table);
+
+  els.compareModalBody.replaceChildren(wrap, chipsSection);
 
   els.compareModal.classList.add('open');
   els.compareModal.setAttribute('aria-hidden', 'false');
@@ -1109,7 +1210,146 @@ function populateCountyHighlights() {
 window.addEventListener('mapready', () => {
   setDailyHighlight();
   populateCountyHighlights();
+  renderCountyTable();
 }, { once: true });
+
+// ── SORTABLE COUNTY TABLE ─────────────────────────────────────────────────────
+const TABLE_COLS = [
+  { key: 'name',    label: 'County',    type: 'str',  cls: 'ct-name'    },
+  { key: 'region',  label: 'Region',    type: 'str',  cls: 'ct-region'  },
+  { key: 'popM',    label: 'Population',type: 'num',  cls: 'ct-pop',    fmt: r => r.pop  },
+  { key: '_area',   label: 'Area km²',  type: 'num',  cls: 'ct-area',   fmt: r => r.area },
+  { key: '_density',label: 'Density',   type: 'num',  cls: 'ct-density',fmt: r => {
+    const a = parseInt((r.area||'0').replace(/,/g,''),10);
+    return a ? Math.round(r.popM * 1_000_000 / a).toLocaleString() : '—';
+  }},
+  { key: '_gcp',    label: 'GCP',       type: 'num',  cls: 'ct-gcp',    fmt: r => r.gcp  },
+];
+
+let _tableSort  = { key: 'popM', dir: 'desc' };
+
+function getRowValue(row, col) {
+  if (col.key === '_area')    return parseInt((row.area||'0').replace(/,/g,''),10) || 0;
+  if (col.key === '_density') {
+    const a = parseInt((row.area||'0').replace(/,/g,''),10);
+    return a ? row.popM * 1_000_000 / a : 0;
+  }
+  if (col.key === '_gcp')     return parseGcpValue(row.gcp);
+  if (col.type === 'num')     return row[col.key] ?? 0;
+  return (row[col.key] ?? '').toString().toLowerCase();
+}
+
+function renderCountyTable() {
+  const wrap = document.getElementById('county-table-wrap');
+  if (!wrap) return;
+
+  const counties = Object.entries(countiesData).map(([name, d]) => ({ name, ...d }));
+
+  function buildTable() {
+    const col = TABLE_COLS.find(c => c.key === _tableSort.key) || TABLE_COLS[0];
+    const sorted = [...counties].sort((a, b) => {
+      const av = getRowValue(a, col);
+      const bv = getRowValue(b, col);
+      const cmp = typeof av === 'number' ? av - bv : av.localeCompare(bv);
+      return _tableSort.dir === 'asc' ? cmp : -cmp;
+    });
+
+    // Table
+    const table = document.createElement('table');
+    table.className = 'county-table';
+    table.setAttribute('role', 'grid');
+    table.setAttribute('aria-label', 'All 47 counties sortable table');
+
+    // Head
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    TABLE_COLS.forEach(c => {
+      const th = document.createElement('th');
+      th.className = 'ct-th ' + c.cls;
+      th.setAttribute('scope', 'col');
+      th.setAttribute('role', 'columnheader');
+      th.setAttribute('aria-sort',
+        _tableSort.key === c.key
+          ? (_tableSort.dir === 'asc' ? 'ascending' : 'descending')
+          : 'none'
+      );
+      th.setAttribute('tabindex', '0');
+
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = c.label;
+
+      const arrow = document.createElement('span');
+      arrow.className = 'ct-sort-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      if (_tableSort.key === c.key) {
+        arrow.textContent = _tableSort.dir === 'asc' ? ' ↑' : ' ↓';
+        arrow.classList.add('active');
+      }
+
+      th.append(labelSpan, arrow);
+
+      const sort = () => {
+        if (_tableSort.key === c.key) {
+          _tableSort.dir = _tableSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          _tableSort = { key: c.key, dir: c.type === 'str' ? 'asc' : 'desc' };
+        }
+        buildTable();
+      };
+      th.addEventListener('click', sort);
+      th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); } });
+
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    sorted.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.className = 'ct-row';
+      tr.setAttribute('tabindex', '0');
+      tr.setAttribute('role', 'row');
+      tr.setAttribute('aria-label', `${row.name} county. Click to explore.`);
+
+      TABLE_COLS.forEach(c => {
+        const td = document.createElement('td');
+        td.className = 'ct-td ' + c.cls;
+
+        if (c.key === 'region') {
+          const dot = document.createElement('span');
+          dot.className = 'ct-region-dot';
+          dot.style.background = REGION_COLORS[row.region] || '#cbd5e1';
+          dot.setAttribute('aria-hidden', 'true');
+          td.append(dot, document.createTextNode(row.region));
+        } else {
+          td.textContent = c.fmt ? c.fmt(row) : (row[c.key] ?? '—');
+        }
+        tr.appendChild(td);
+      });
+
+      const activate = () => {
+        const pathEl = (() => {
+          let el = null;
+          _g?.selectAll('path').each(function(d) {
+            if (_findMatch?.(d)?.name === row.name) el = this;
+          });
+          return el;
+        })();
+        showCounty(row, pathEl);
+      };
+      tr.addEventListener('click', activate);
+      tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+
+      tbody.appendChild(tr);
+    });
+
+    table.append(thead, tbody);
+    wrap.replaceChildren(table);
+  }
+
+  buildTable();
+}
 
 // Fallback: if mapready never fires (e.g. GeoJSON blocked), still initialise the highlight
 document.addEventListener('DOMContentLoaded', () => {
